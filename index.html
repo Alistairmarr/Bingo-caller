@@ -63,7 +63,7 @@
     <header>
       <h1>🎉 Bingo Caller (Simple)</h1>
       <div id="controls">
-        <button class="btn" id="audienceBtn">Open Audience View</button>
+        
         <button class="btn" id="resetBtn">Reset</button>
       </div>
     </header>
@@ -84,7 +84,7 @@
 (function(){
   const el=id=>document.getElementById(id);
   const gridEl=el('grid'), nowEl=el('now'), lastEl=el('last'), drawnCount=el('drawnCount');
-  const bigNext=el('bigNext'), resetBtn=el('resetBtn'), audienceBtn=el('audienceBtn');
+  const bigNext=el('bigNext'), resetBtn=el('resetBtn');
 
   const params=new URLSearchParams(location.search);
   const isAudience=params.get('view')==='audience';
@@ -155,10 +155,7 @@
     }
   }
 
-  function openAudience(){
-    const url=new URL(location.href); url.searchParams.set('view','audience');
-    let w=null; try{ w=window.open(url.toString(),'_blank','noopener'); }catch(e){}
-    if(!w){ try{ w=window.open('about:blank','_blank','noopener'); if(w) w.location.href=url.toString(); }catch(e){ location.href=url.toString(); } }
+      if(!w){ try{ w=window.open('about:blank','_blank','noopener'); if(w) w.location.href=url.toString(); }catch(e){ location.href=url.toString(); } }
   }
 
   // Init
@@ -261,7 +258,7 @@
   if(!isAudience){
     bigNext.addEventListener('click', ()=>{ if(!canPress) return; canPress=false; nextNumber(); setTimeout(()=>canPress=true, 250); });
     resetBtn.addEventListener('click', ()=>reset(confirm('Reshuffle numbers? OK=new order, Cancel=keep order')));
-    audienceBtn.addEventListener('click', openAudience);
+    
     document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); nextNumber(); } });
   } else {
     // Audience: allow spacebar to advance if opened with ?control=1
