@@ -1,386 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bingo Caller</title>
-  <style>
-    :root {
-      /* Width of the left (number) column scales with viewport height */
-      --numCol: 40vmin;
-      /* Default cell size – recalculated in JavaScript to fill the grid */
-      --cell: 40px;
-      /* Gap between grid cells */
-      --gap: 2px;
-      /* Button colour */
-      --primary: #e53935;
-      /* Highlight colour for called numbers */
-      --highlight: #fff59d;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bingo Caller</title>
+<style>
+  :root{
+    --numCol: 40vmin;
+    --cell: 40px;
+    --gap: 6px;
+    --radius: 14px;
+    --primary: #e53935;
+    --primary-press: #d32f2f;
+    --surface: #111418;
+    --panel: #1a1f26;
+    --muted: #9aa4b2;
+    --text: #e8edf4;
+    --highlight: #ffe47a;
+    --accent: #3ea6ff;
+    --shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: system-ui, sans-serif;
-      background-color: #fafafa;
-      overflow: hidden;
-    }
+  /* Modern dark gradient background */
+  html,body{
+    height:100%;
+    margin:0;
+    background:
+      radial-gradient(1200px 800px at 10% -10%, #20304a 0%, transparent 50%),
+      radial-gradient(900px 700px at 120% 120%, #32204a 0%, transparent 40%),
+      linear-gradient(180deg,#0b0f14 0%, #0e141a 100%);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    overflow:hidden;
+  }
 
-    #app {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
+  #app{
+    height:100svh;
+    display:flex;
+    gap: 14px;
+    padding: 14px;
+    box-sizing:border-box;
+  }
 
-    /* Left column with current number and controls */
-    .left {
-      width: var(--numCol);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 1rem;
-      box-sizing: border-box;
-      background-color: #ffffff;
-      border-right: 1px solid #e0e0e0;
-    }
+  /* LEFT PANEL */
+  .left{
+    width:var(--numCol);
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 18px 16px;
+  }
 
-    .current-number {
-      font-size: 24vmin;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-      font-family: "Courier New", Courier, monospace;
-      text-align: center;
-      width: 100%;
-      min-height: 1em;
-      user-select: none;
-    }
+  .current-wrap{
+    width:100%;
+    flex:1;
+    display:grid;
+    place-items:center;
+  }
 
-    .current-number.pop {
-      animation: pop 0.4s ease-out;
-    }
+  .current-number{
+    font-size: clamp(80px, 24vmin, 240px);
+    line-height:1;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-family: "Courier New", Courier, monospace;
+    text-align:center;
+    width:100%;
+    user-select:none;
+    text-shadow: 0 6px 24px rgba(0,0,0,.35);
+  }
+  .current-number.pop{ animation: pop .42s cubic-bezier(.2,.9,.2,1); }
+  @keyframes pop{
+    0%{ transform:scale(1); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+    50%{ transform:scale(1.18); filter: drop-shadow(0 0 20px rgba(255,255,255,.25)); }
+    100%{ transform:scale(1); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  }
 
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
+  .controls{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding-top:8px;
+  }
 
-    #nextButton {
-      margin-top: 1rem;
-      padding: 1rem;
-      font-size: 4vmin;
-      background-color: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      width: 80%;
-      cursor: pointer;
-      transition: transform 0.1s ease;
-      user-select: none;
-    }
+  .btn{
+    width:min(84%, 360px);
+    padding: 16px 18px;
+    border:none;
+    border-radius:12px;
+    color:white;
+    font-weight:700;
+    letter-spacing:.02em;
+    cursor:pointer;
+    transition: transform .08s ease, filter .2s ease, background-color .2s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    user-select:none;
+  }
+  #nextButton{
+    background: linear-gradient(180deg, var(--primary), var(--primary-press));
+  }
+  #nextButton:active:not(:disabled){ transform: scale(1.04); }
+  #nextButton:disabled{
+    filter:saturate(.2) brightness(.7);
+    cursor:default;
+  }
+  #resetButton{
+    background: linear-gradient(180deg, #3a3f46, #30353b);
+    color:#e9eef6;
+  }
+  #resetButton:hover{ filter:brightness(1.08); }
 
-    #nextButton:active:not(:disabled) {
-      transform: scale(1.05);
-    }
+  #count{
+    font-size: clamp(14px, 2.6vmin, 18px);
+    color: var(--muted);
+    user-select:none;
+  }
 
-    #nextButton:disabled {
-      background-color: #bdbdbd;
-      cursor: default;
-    }
+  /* RIGHT PANEL */
+  .right{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
 
-    #count {
-      margin-top: 0.5rem;
-      font-size: 2.5vmin;
-      user-select: none;
-    }
+  .panel{
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
 
-    #resetButton {
-      margin-top: 0.5rem;
-      padding: 0.5rem;
-      font-size: 2.5vmin;
-      background-color: #9e9e9e;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      width: 60%;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      user-select: none;
-    }
+  /* GRID */
+  .grid-wrap{
+    flex:1;                 /* Take all remaining height so we can size the grid to it */
+    min-height:0;           /* allow child to measure correctly */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 12px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(9, var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: var(--gap);
+    align-content:start;
+    justify-content:center;
+    /* prevent accidental scroll while we auto-fit cells */
+    max-width: 100%;
+  }
+  .cell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: #202630;
+    color:#e6ebf3;
+    border-radius:10px;
+    font-weight:600;
+    font-size: calc(var(--cell) * .42);
+    user-select:none;
+    transition: box-shadow .25s ease, background-color .25s ease, transform .25s ease, border-color .25s ease;
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .cell.called{
+    background: #2a3b28;
+    color: #eaf7d6;
+    box-shadow: inset 0 0 0 2px rgba(174, 220, 129,.2);
+  }
+  .cell.current{
+    box-shadow: 0 0 0 3px var(--accent), 0 0 24px rgba(62,166,255,.35);
+  }
+  .cell.pulse{ animation: cellpulse .8s ease-out; }
+  @keyframes cellpulse{
+    0%{ transform:scale(1); box-shadow: 0 0 0 0 rgba(62,166,255,.75); }
+    65%{ transform:scale(1.06); box-shadow: 0 0 20px 10px rgba(62,166,255,0); }
+    100%{ transform:scale(1); box-shadow: 0 0 0 0 rgba(62,166,255,0); }
+  }
 
-    #resetButton:hover {
-      background-color: #757575;
-    }
+  /* Recent Calls */
+  .recent{
+    display:flex;
+    gap:8px;
+    padding: 10px 12px 14px;
+    overflow-x:auto;
+  }
+  .recent-chip{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width: calc(var(--cell)*.85);
+    height: calc(var(--cell)*.85);
+    background: #222a33;
+    color:#e6ebf3;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.06);
+    font-weight:600;
+    font-size: calc(var(--cell)*.36);
+    user-select:none;
+  }
+  .recent-chip.current{
+    background: linear-gradient(180deg, #ff3d55, #d41e37);
+    color:white;
+    box-shadow: 0 6px 18px rgba(255,61,85,.35);
+  }
 
-    .right {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 1rem;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
+  /* Scrollbar minimal */
+  .recent::-webkit-scrollbar{ height: 8px; }
+  .recent::-webkit-scrollbar-thumb{ background:#2a313a; border-radius:6px; }
 
-    /* The 10×9 grid for numbers 1–90 */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(9, var(--cell));
-      grid-auto-rows: var(--cell);
-      gap: var(--gap);
-      justify-content: center;
-      align-content: start;
-      overflow: hidden;
-      margin-bottom: 1rem;
-    }
-
-    .grid .cell {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: calc(var(--cell) * 0.4);
-      background-color: #f5f5f5;
-      border-radius: 4px;
-      color: #212121;
-      position: relative;
-      user-select: none;
-    }
-
-    .grid .cell.called {
-      background-color: var(--highlight);
-      color: #000;
-    }
-
-    .grid .cell.current {
-      border: 3px solid #fbc02d;
-    }
-
-    .grid .cell.pulse {
-      animation: cellPulse 0.8s ease-out;
-    }
-
-    @keyframes cellPulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.8);
-      }
-      70% {
-        box-shadow: 0 0 15px 10px rgba(255, 235, 59, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0);
-      }
-    }
-
-    /* Recent calls strip */
-    .recent-calls {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      gap: 0.5rem;
-      justify-content: center;
-      width: 100%;
-      padding-bottom: 0.5rem;
-    }
-
-    .recent-calls .recent-cell {
-      width: calc(var(--cell) * 0.8);
-      height: calc(var(--cell) * 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #eeeeee;
-      border-radius: 4px;
-      font-size: calc(var(--cell) * 0.35);
-      color: #212121;
-      flex: 0 0 auto;
-      user-select: none;
-    }
-
-    .recent-calls .recent-cell.current {
-      background-color: var(--primary);
-      color: #ffffff;
-    }
-  </style>
+  /* Make sure small portrait still works */
+  @media (max-aspect-ratio: 1/1){
+    :root{ --numCol: 44vmin; }
+  }
+</style>
 </head>
 <body>
   <div id="app">
-    <div class="left">
-      <div class="current-number">--</div>
-      <button id="nextButton">NEXT</button>
-      <div id="count">Drawn: 0/90</div>
-      <button id="resetButton">Reset</button>
+    <div class="left panel">
+      <div class="current-wrap">
+        <div class="current-number" id="current">--</div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="nextButton">NEXT</button>
+        <div id="count">Drawn: 0/90</div>
+        <button class="btn" id="resetButton">Reset</button>
+      </div>
     </div>
+
     <div class="right">
-      <div class="grid" id="grid"></div>
-      <div class="recent-calls" id="recentCalls"></div>
+      <div class="grid-wrap panel">
+        <div id="grid" class="grid" aria-label="Bingo grid 1 to 90"></div>
+      </div>
+      <div id="recentCalls" class="recent panel" aria-label="Recent calls"></div>
     </div>
   </div>
 
-  <script>
-    // Simple Fisher–Yates shuffle
-    function shuffle(array) {
-      let currentIndex = array.length;
-      let randomIndex;
-      while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+<script>
+  // Fisher–Yates shuffle
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  // State
+  let state = { numbers: [], index: 0 };
+
+  // Build grid 1..90
+  function buildGrid(){
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    for(let i=1;i<=90;i++){
+      const d = document.createElement('div');
+      d.className = 'cell';
+      d.dataset.num = i;
+      d.textContent = i;
+      grid.appendChild(d);
+    }
+  }
+
+  // Size cells to fit: never overflow bottom
+  function updateCellSize(){
+    const rightPanel = document.querySelector('.right');
+    const gridWrap   = document.querySelector('.grid-wrap');
+    const grid       = document.getElementById('grid');
+    const recent     = document.getElementById('recentCalls');
+
+    const styles = getComputedStyle(document.documentElement);
+    const gap = parseFloat(styles.getPropertyValue('--gap')) || 0;
+
+    // Available height for grid (inside grid-wrap)
+    const wrapRect = gridWrap.getBoundingClientRect();
+    // Account for panel inner padding (12px on each side) already in CSS, grid uses exact area inside
+    // We must subtract the total gap height between 10 rows (9 gaps)
+    const availH = wrapRect.height - gap*9;
+    // Available width for 9 columns (8 gaps). Limit by grid-wrap inner width.
+    const availW = gridWrap.clientWidth - gap*8;
+
+    const sizeH = Math.floor(availH / 10);
+    const sizeW = Math.floor(availW / 9);
+    const size  = Math.max(22, Math.min(sizeH, sizeW)); // keep readable minimum
+
+    document.documentElement.style.setProperty('--cell', size + 'px');
+  }
+
+  // Render UI
+  function updateDisplay(){
+    const drawn = state.index;
+    const current = state.numbers[drawn-1] ?? '--';
+    const currentEl = document.getElementById('current');
+    currentEl.textContent = current;
+
+    document.getElementById('count').textContent = `Drawn: ${drawn}/90`;
+
+    const drawnSet = new Set(state.numbers.slice(0, drawn));
+    document.querySelectorAll('.grid .cell').forEach(cell=>{
+      const n = +cell.dataset.num;
+      cell.classList.toggle('called', drawnSet.has(n));
+      cell.classList.toggle('current', n === current);
+    });
+
+    // Recent strip (last 10, newest first)
+    const recent = document.getElementById('recentCalls');
+    recent.innerHTML = '';
+    state.numbers.slice(Math.max(0, drawn-10), drawn).reverse().forEach((n,idx)=>{
+      const chip = document.createElement('div');
+      chip.className = 'recent-chip' + (idx===0 ? ' current':'');
+      chip.textContent = n;
+      recent.appendChild(chip);
+    });
+
+    // Button state
+    document.getElementById('nextButton').disabled = drawn >= state.numbers.length;
+
+    // Ensure size correct after DOM changes
+    updateCellSize();
+  }
+
+  function drawNext(){
+    if(state.index >= state.numbers.length) return;
+    state.index++;
+    localStorage.setItem('bingoState', JSON.stringify(state));
+
+    const current = state.numbers[state.index-1];
+    // Big number pop
+    const currentEl = document.getElementById('current');
+    currentEl.classList.remove('pop'); void currentEl.offsetWidth; currentEl.classList.add('pop');
+    // Cell pulse
+    const cell = document.querySelector(`.cell[data-num="${current}"]`);
+    if(cell){ cell.classList.remove('pulse'); void cell.offsetWidth; cell.classList.add('pulse'); }
+
+    updateDisplay();
+  }
+
+  function resetGame(){
+    if(!confirm('Reset game?')) return;
+    const nums = Array.from({length:90},(_,i)=>i+1);
+    shuffle(nums);
+    state = { numbers: nums, index: 0 };
+    localStorage.setItem('bingoState', JSON.stringify(state));
+    updateDisplay();
+  }
+
+  function init(){
+    // State restore
+    try{
+      const saved = JSON.parse(localStorage.getItem('bingoState')||'null');
+      if(saved && Array.isArray(saved.numbers) && typeof saved.index==='number'){
+        state = saved;
+      }else{
+        const nums = Array.from({length:90},(_,i)=>i+1);
+        shuffle(nums);
+        state = { numbers: nums, index: 0 };
       }
-      return array;
-    }
-
-    // Global state object
-    let state = { numbers: [], index: 0 };
-
-    // Build the 1–90 grid
-    function buildGrid() {
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      for (let i = 1; i <= 90; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.num = i;
-        cell.textContent = i;
-        grid.appendChild(cell);
-      }
-    }
-
-    // Update the display: current number, counts, grid classes and recent strip
-    function updateDisplay() {
-      const drawnCount = state.index;
-      const currentNumber = state.numbers[state.index - 1] || '--';
-      const currentElem = document.querySelector('.current-number');
-      currentElem.textContent = currentNumber;
-      const countElem = document.getElementById('count');
-      countElem.textContent = 'Drawn: ' + drawnCount + '/90';
-      // update grid cells
-      const drawnSet = new Set(state.numbers.slice(0, state.index));
-      document.querySelectorAll('.grid .cell').forEach(cell => {
-        const num = parseInt(cell.dataset.num, 10);
-        cell.classList.remove('called', 'current');
-        if (drawnSet.has(num)) {
-          cell.classList.add('called');
-        }
-        if (num === currentNumber) {
-          cell.classList.add('current');
-        }
-      });
-      // update recent calls strip
-      const recentList = state.numbers.slice(Math.max(0, state.index - 10), state.index).reverse();
-      const recentDiv = document.getElementById('recentCalls');
-      recentDiv.innerHTML = '';
-      recentList.forEach((num, idx) => {
-        const rc = document.createElement('div');
-        rc.className = 'recent-cell';
-        rc.textContent = num;
-        if (idx === 0) rc.classList.add('current');
-        recentDiv.appendChild(rc);
-      });
-      // disable Next button when all numbers drawn
-      const nextButton = document.getElementById('nextButton');
-      nextButton.disabled = state.index >= state.numbers.length;
-      // adjust cell size after recent calls update
-      updateCellSize();
-    }
-
-    // Draw next number
-    function drawNext() {
-      if (state.index >= state.numbers.length) return;
-      state.index++;
-      // Save progress
-      localStorage.setItem('bingoState', JSON.stringify(state));
-      const currentNumber = state.numbers[state.index - 1];
-      // Trigger big number animation
-      const currentElem = document.querySelector('.current-number');
-      currentElem.classList.remove('pop');
-      // Force reflow to restart animation
-      void currentElem.offsetWidth;
-      currentElem.classList.add('pop');
-      // Trigger cell pulse
-      const targetCell = document.querySelector('.grid .cell[data-num="' + currentNumber + '"]');
-      if (targetCell) {
-        targetCell.classList.remove('pulse');
-        void targetCell.offsetWidth;
-        targetCell.classList.add('pulse');
-      }
-      updateDisplay();
-    }
-
-    // Reset the game with confirmation
-    function resetGame() {
-      if (!confirm('Reset game?')) return;
-      // Generate new shuffled numbers
-      const nums = [];
-      for (let i = 1; i <= 90; i++) nums.push(i);
+    }catch{
+      const nums = Array.from({length:90},(_,i)=>i+1);
       shuffle(nums);
       state = { numbers: nums, index: 0 };
-      localStorage.setItem('bingoState', JSON.stringify(state));
-      updateDisplay();
     }
 
-    // Compute and set cell size so grid fills available space
-    function updateCellSize() {
-      const right = document.querySelector('.right');
-      const grid = document.getElementById('grid');
-      const recent = document.getElementById('recentCalls');
-      if (!right) return;
-      const rightRect = right.getBoundingClientRect();
-      const recentHeight = recent ? recent.getBoundingClientRect().height : 0;
-      // space for grid height minus recent calls and a small margin
-      const availableHeight = rightRect.height - recentHeight - 32;
-      const cellHeight = availableHeight / 10;
-      const cellWidth = rightRect.width / 9;
-      const cellSize = Math.floor(Math.min(cellWidth, cellHeight));
-      if (cellSize > 0) {
-        document.documentElement.style.setProperty('--cell', cellSize + 'px');
-      }
-    }
+    buildGrid();
+    updateDisplay();
 
-    // Load state from localStorage or initialise a new game
-    function initGame() {
-      const stored = localStorage.getItem('bingoState');
-      let numbers = [];
-      let index = 0;
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed.numbers) && typeof parsed.index === 'number') {
-            numbers = parsed.numbers;
-            index = parsed.index;
-          }
-        } catch (e) {
-          // ignore corrupted state
-        }
-      }
-      if (!numbers.length) {
-        for (let i = 1; i <= 90; i++) numbers.push(i);
-        shuffle(numbers);
-      }
-      state = { numbers: numbers, index: index };
-      buildGrid();
-      updateDisplay();
-    }
+    document.getElementById('nextButton').addEventListener('click', drawNext);
+    document.getElementById('resetButton').addEventListener('click', resetGame);
 
-    // Attach event handlers
-    window.addEventListener('load', () => {
-      initGame();
-      // NEXT button handler
-      document.getElementById('nextButton').addEventListener('click', drawNext);
-      // Reset button handler
-      document.getElementById('resetButton').addEventListener('click', resetGame);
-      // Spacebar triggers NEXT
-      window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-          e.preventDefault();
-          drawNext();
-        }
-      });
-      // Handle window resize
-      window.addEventListener('resize', updateCellSize);
+    window.addEventListener('keydown', e=>{
+      if(e.code === 'Space'){ e.preventDefault(); drawNext(); }
     });
-  </script>
+
+    // Resize handling (use ResizeObserver for robustness)
+    const ro = new ResizeObserver(()=>updateCellSize());
+    ro.observe(document.querySelector('.right'));
+    ro.observe(document.querySelector('.grid-wrap'));
+    window.addEventListener('orientationchange', ()=>setTimeout(updateCellSize, 50));
+    window.addEventListener('load', updateCellSize);
+  }
+
+  init();
+</script>
 </body>
 </html>
