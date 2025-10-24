@@ -2,247 +2,720 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
 <title>Bingo Caller</title>
 <style>
   :root{
-    --numCol: 40vmin;
-    --cell: 40px;
-    --gap: 6px;
-    --radius: 14px;
+    /* Left column width as a fraction of viewport height (like 40vmin) */
+    --numColFractionOfHeight: 0.40;
+    --gap: 8px;
+    --panelRadius: 16px;
     --primary: #e53935;
-    --primary-press: #d32f2f;
-    --surface: #111418;
-    --panel: #1a1f26;
-    --muted: #9aa4b2;
-    --text: #e8edf4;
-    --highlight: #ffe47a;
+    --primaryDark: #d32f2f;
     --accent: #3ea6ff;
-    --shadow: 0 10px 30px rgba(0,0,0,.25);
+    --called: #fff59d;
+    --bg1: #0c0f1a;
+    --bg2: #181c30;
+    --text: #f5f7ff;
+    --subtle: #9aa1b2;
+    --shadow: 0 8px 28px rgba(0,0,0,0.35);
   }
 
-  html,body{
-    height:100%;
-    margin:0;
-    background:
-      radial-gradient(1200px 800px at 10% -10%, #20304a 0%, transparent 50%),
-      radial-gradient(900px 700px at 120% 120%, #32204a 0%, transparent 40%),
-      linear-gradient(180deg,#0b0f14 0%, #0e141a 100%);
+  /* Modern dark gradient background, edge-to-edge */
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: radial-gradient(1200px 800px at 20% 10%, #1a2340 0%, #0e1120 60%, #05060b 100%);
     color: var(--text);
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    overflow:hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  #app{
-    height:100svh;
-    display:flex;
-    gap: 14px;
-    padding: 14px;
-    box-sizing:border-box;
+  /* Root layout: two columns in landscape; stacks in portrait */
+  .root {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr;
+    gap: var(--gap);
+    padding: var(--gap);
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
   }
 
-  .left{
-    width:var(--numCol);
-    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: var(--radius);
+  /* LEFT COLUMN */
+  .leftPanel {
+    display: grid;
+    grid-template-rows: 1fr auto auto auto;
+    gap: var(--gap);
+    height: 100%;
+    width: var(--leftWidthPx); /* set via JS for 40% of viewport height */
+    min-width: 260px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, var(--bg2), var(--bg1));
+    border-radius: var(--panelRadius);
     box-shadow: var(--shadow);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding: 18px 16px;
+    border: 1px solid rgba(255,255,255,0.04);
   }
 
-  .current-wrap{
-    width:100%;
-    flex:1;
-    display:grid;
-    place-items:center;
+  .bigNumberPanel {
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
   }
 
-  .current-number{
-    font-size: clamp(80px, 24vmin, 240px);
-    line-height:1;
-    font-variant-numeric: tabular-nums lining-nums;
-    font-family: "Courier New", Courier, monospace;
-    text-align:center;
-    width:100%;
-    user-select:none;
-    text-shadow: 0 6px 24px rgba(0,0,0,.35);
-    /* subtle idle animation */
-    animation: breathe 3.2s ease-in-out infinite;
-  }
-  @keyframes breathe{
-    0%   { transform: scale(1);        filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
-    50%  { transform: scale(1.02);     filter: drop-shadow(0 0 10px rgba(255,255,255,.12)); }
-    100% { transform: scale(1);        filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  /* Big number text */
+  .bigNumber {
+    /* Tabular numerals via CSS feature; consistent widths for 1/88/90 */
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    text-shadow: 0 12px 24px rgba(0,0,0,0.5);
+    /* Scaled dynamically via JS to fit height; fallback size set here */
+    font-size: 24vmin;
+    will-change: transform;
+    transform-origin: center;
+    display: inline-block;
+    user-select: none;
   }
 
-  .current-number.pop{ animation: pop .42s cubic-bezier(.2,.9,.2,1), breathe 3.2s ease-in-out infinite .42s; }
-  @keyframes pop{
-    0%{ transform:scale(1); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
-    50%{ transform:scale(1.18); filter: drop-shadow(0 0 20px rgba(255,255,255,.25)); }
-    100%{ transform:scale(1); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  /* Idle breathe animation */
+  @keyframes breathe {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+  .breathe {
+    animation: breathe 5.5s ease-in-out infinite;
   }
 
-  .controls{
-    width:100%;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:10px;
-    padding-top:8px;
+  /* Pop on draw */
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.16); }
+    100% { transform: scale(1); }
+  }
+  .pop {
+    animation: pop 400ms cubic-bezier(.34,1.56,.64,1);
   }
 
-  .btn{
-    width:min(84%, 360px);
-    padding: 16px 18px;
-    border:none;
-    border-radius:12px;
-    color:white;
-    font-weight:700;
-    letter-spacing:.02em;
-    cursor:pointer;
-    transition: transform .08s ease, filter .2s ease, background-color .2s ease;
-    box-shadow: 0 6px 20px rgba(0,0,0,.35);
-    user-select:none;
-  }
-  #nextButton{
-    background: linear-gradient(180deg, var(--primary), var(--primary-press));
-  }
-  #nextButton:active:not(:disabled){ transform: scale(1.04); }
-  #nextButton:disabled{
-    filter:saturate(.2) brightness(.7);
-    cursor:default;
-  }
-  #resetButton{
-    background: linear-gradient(180deg, #3a3f46, #30353b);
-    color:#e9eef6;
-  }
-  #resetButton:hover{ filter:brightness(1.08); }
-
-  #count{
-    font-size: clamp(14px, 2.6vmin, 18px);
-    color: var(--muted);
-    user-select:none;
-  }
-
-  .right{
-    flex:1;
-    min-width:0;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-
-  .panel{
-    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-  }
-
-  .grid-wrap{
-    flex:1;
-    min-height:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+  .statRow, .buttonRow {
+    display: grid;
+    align-items: center;
+    gap: var(--gap);
     padding: 12px;
   }
-  .grid{
-    display:grid;
-    grid-template-columns: repeat(9, var(--cell));
-    grid-auto-rows: var(--cell);
+
+  .statRow {
+    grid-template-columns: 1fr auto;
+  }
+
+  .counter {
+    font-weight: 600;
+    color: var(--subtle);
+  }
+
+  .buttonRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .btn {
+    background: var(--bg2);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 700;
+    padding: 14px 16px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    user-select: none;
+    touch-action: manipulation;
+    position: relative;
+  }
+  .btn:active { transform: translateY(1px); }
+
+  .btnPrimary {
+    background: linear-gradient(180deg, var(--primary), var(--primaryDark));
+    border-color: rgba(0,0,0,0.2);
+  }
+  .btnPrimary[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .cooldownOverlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0,0,0,0.25);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid rgba(255,255,255,0.25);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 900ms linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* RIGHT COLUMN */
+  .rightPanel {
+    display: grid;
+    grid-template-rows: 1fr auto;
     gap: var(--gap);
-    align-content:start;
-    justify-content:center;
-    max-width: 100%;
-  }
-  .cell{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background: #202630;
-    color:#e6ebf3;
-    border-radius:10px;
-    font-weight:600;
-    font-size: calc(var(--cell) * .42);
-    user-select:none;
-    transition: box-shadow .25s ease, background-color .25s ease, transform .25s ease, border-color .25s ease;
-    border: 1px solid rgba(255,255,255,.05);
-  }
-  .cell.called{
-    background: #2a3b28;
-    color: #eaf7d6;
-    box-shadow: inset 0 0 0 2px rgba(174, 220, 129,.2);
-  }
-  .cell.current{
-    box-shadow: 0 0 0 3px var(--accent), 0 0 24px rgba(62,166,255,.35);
-  }
-  .cell.pulse{ animation: cellpulse .8s ease-out; }
-  @keyframes cellpulse{
-    0%{ transform:scale(1); box-shadow: 0 0 0 0 rgba(62,166,255,.75); }
-    65%{ transform:scale(1.06); box-shadow: 0 0 20px 10px rgba(62,166,255,0); }
-    100%{ transform:scale(1); box-shadow: 0 0 0 0 rgba(62,166,255,0); }
+    height: 100%;
+    min-width: 520px;
   }
 
-  .recent{
-    display:flex;
-    gap:8px;
-    padding: 10px 12px 14px;
-    overflow-x:auto;
+  .gridPanel {
+    padding: var(--gap);
+    display: grid;
+    box-sizing: border-box;
   }
-  .recent-chip{
-    flex:0 0 auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width: calc(var(--cell)*.85);
-    height: calc(var(--cell)*.85);
-    background: #222a33;
-    color:#e6ebf3;
+
+  /* 10 rows x 9 cols */
+  .grid {
+    display: grid;
+    grid-template-rows: repeat(10, var(--cellPx));
+    grid-template-columns: repeat(9, var(--cellPx));
+    gap: 4px;
+    justify-content: center; /* center grid horizontally */
+    align-content: center;   /* center vertically within panel */
+    width: 100%;
+    height: 100%;
+  }
+
+  .cell {
+    display: grid;
+    place-items: center;
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,.06);
-    font-weight:600;
-    font-size: calc(var(--cell)*.36);
-    user-select:none;
-  }
-  .recent-chip.current{
-    background: linear-gradient(180deg, #ff3d55, #d41e37);
-    color:white;
-    box-shadow: 0 6px 18px rgba(255,61,85,.35);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
   }
 
-  .recent::-webkit-scrollbar{ height: 8px; }
-  .recent::-webkit-scrollbar-thumb{ background:#2a313a; border-radius:6px; }
+  .cell.called {
+    background: var(--called);
+    color: #1d1d1d;
+    border-color: rgba(0,0,0,0.15);
+    text-shadow: none;
+  }
 
-  @media (max-aspect-ratio: 1/1){
-    :root{ --numCol: 44vmin; }
+  /* Current number cell outline + pulse glow */
+  .cell.current {
+    outline: 2px solid var(--accent);
+    box-shadow: 0 0 0 4px rgba(62,166,255,0.15), 0 0 28px 4px rgba(62,166,255,0.25) inset;
+    animation: cellPulse 1200ms ease-in-out infinite;
+  }
+  @keyframes cellPulse {
+    0% { box-shadow: 0 0 0 4px rgba(62,166,255,0.12), 0 0 18px 2px rgba(62,166,255,0.18) inset; }
+    50% { box-shadow: 0 0 0 6px rgba(62,166,255,0.2), 0 0 36px 6px rgba(62,166,255,0.35) inset; }
+    100% { box-shadow: 0 0 0 4px rgba(62,166,255,0.12), 0 0 18px 2px rgba(62,166,255,0.18) inset; }
+  }
+
+  /* Recent calls strip */
+  .recentPanel {
+    padding: 10px;
+    display: grid;
+    grid-auto-flow: column;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .chip {
+    min-width: 44px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .chip.newest {
+    background: rgba(62,166,255,0.22);
+    border-color: rgba(62,166,255,0.6);
+  }
+
+  /* Portrait fallback: single column */
+  @media (orientation: portrait) {
+    .root {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+    }
+    .leftPanel {
+      width: 100%;
+      grid-template-rows: auto auto auto auto;
+    }
+    .rightPanel {
+      min-width: 0;
+    }
+    .grid {
+      justify-content: center;
+      align-content: start;
+    }
+  }
+
+  /* Subtle controls row */
+  .toolsRow {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+  .tinyBtn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .tinyBtn:active { transform: translateY(1px); }
+
+  /* Hidden live region for screen readers + speech synthesis fallback */
+  .sr-live {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
   }
 </style>
 </head>
 <body>
-  <div id="app">
-    <div class="left panel">
-      <div class="current-wrap">
-        <div class="current-number" id="current">--</div>
+  <div class="root" id="app" role="application" aria-label="Bingo Caller">
+    <!-- Optional helper tools -->
+    <div class="toolsRow">
+      <button class="tinyBtn" id="btnFullscreen" title="Fullscreen">Fullscreen</button>
+      <button class="tinyBtn" id="btnWake" title="Keep screen awake">Stay Awake</button>
+    </div>
+
+    <!-- LEFT -->
+    <div class="leftPanel">
+      <div class="panel bigNumberPanel" aria-live="polite" aria-atomic="true">
+        <div id="bigNumber" class="bigNumber breathe" role="status" aria-label="Current number">—</div>
       </div>
-      <div class="controls">
-        <button class="btn" id="nextButton">NEXT</button>
-        <div id="count">Drawn: 0/90</div>
-        <button class="btn" id="resetButton">Reset</button>
+
+      <div class="panel statRow">
+        <div class="counter" id="counter">Drawn: 0 / 90</div>
+        <div style="opacity:.65;font-size:.9rem" id="version">v1.0.0</div>
+      </div>
+
+      <div class="panel buttonRow">
+        <button id="btnNext" class="btn btnPrimary" aria-label="Next number">NEXT</button>
+        <button id="btnReset" class="btn" aria-label="Reset and reshuffle">RESET</button>
+        <!-- cooldown overlay is injected dynamically -->
+      </div>
+
+      <div class="panel statRow" style="grid-template-columns: auto 1fr;">
+        <div style="opacity:.75">Newest:</div>
+        <div id="newest" style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">—</div>
       </div>
     </div>
 
-    <div class="right">
-      <div class="grid-wrap panel">
-        <div id="grid" class="grid" aria-label="Bingo grid 1 to 90"></div>
+    <!-- RIGHT -->
+    <div class="rightPanel">
+      <div class="panel gridPanel">
+        <div id="grid" class="grid" aria-label="Numbers grid"></div>
       </div>
-      <div id="recentCalls" class="recent panel" aria-label="Recent calls"></div>
+
+      <div class="panel recentPanel" id="recent" aria-label="Recent numbers strip"></div>
     </div>
   </div>
 
+  <!-- Live region for screen readers -->
+  <div id="live" class="sr-live" aria-live="assertive" aria-atomic="true"></div>
+
 <script>
-  function shuffle(arr){
-    for(let i=arr.leng
+(function(){
+  "use strict";
+
+  /********************
+   * CONFIG
+   ********************/
+  const NUMBERS = 90;
+  const ROWS = 10;
+  const COLS = 9;
+  const COOLDOWN_MS = 1000;
+  const LEFT_FRACTION_OF_HEIGHT = parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue('--numColFractionOfHeight')) || 0.40;
+
+  const STORAGE_KEY = 'bingo_state_v1';
+  const SNAPSHOT_KEY = 'bingo_snapshot_v1';
+
+  const els = {
+    app: document.getElementById('app'),
+    grid: document.getElementById('grid'),
+    bigNumber: document.getElementById('bigNumber'),
+    counter: document.getElementById('counter'),
+    newest: document.getElementById('newest'),
+    recent: document.getElementById('recent'),
+    btnNext: document.getElementById('btnNext'),
+    btnReset: document.getElementById('btnReset'),
+    btnFullscreen: document.getElementById('btnFullscreen'),
+    btnWake: document.getElementById('btnWake'),
+    live: document.getElementById('live')
+  };
+
+  let wakeLock = null;
+  let coolingDown = false;
+
+  // Game state
+  let state = {
+    numbers: [],  // shuffled array 1..90
+    index: -1,    // -1 means nothing drawn yet
+    seed: 0,
+    updatedAt: 0
+  };
+
+  /********************
+   * UTILITIES
+   ********************/
+  const nowTs = () => Date.now();
+
+  function seededRandom(seed) {
+    // Simple mulberry32 PRNG for reproducibility
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function fisherYatesShuffle(arr, rand) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function saveState() {
+    state.updatedAt = nowTs();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    // also snapshot a human-friendly JSON
+    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({
+      sequence: state.numbers,
+      index: state.index,
+      seed: state.seed,
+      updatedAt: state.updatedAt,
+      drawn: state.index + 1,
+      remaining: Math.max(0, NUMBERS - (state.index + 1))
+    }, null, 2));
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const obj = JSON.parse(raw);
+      if (!Array.isArray(obj.numbers) || obj.numbers.length !== NUMBERS) return false;
+      if (typeof obj.index !== 'number' || typeof obj.seed !== 'number') return false;
+      state = obj;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function resetGame(confirmNeeded = true) {
+    if (confirmNeeded && !window.confirm('Reset game and reshuffle?')) return;
+    // seed using current time; store for reproducibility
+    state.seed = Math.floor(Math.random() * 0xFFFFFFFF);
+    const rand = seededRandom(state.seed);
+
+    state.numbers = Array.from({length: NUMBERS}, (_, i) => i + 1);
+    fisherYatesShuffle(state.numbers, rand);
+    state.index = -1;
+    saveState();
+    renderAll();
+    announce('Game reset. Ready.');
+  }
+
+  function currentNumber() {
+    return state.index >= 0 ? state.numbers[state.index] : null;
+  }
+
+  function recentList(limit = 10) {
+    const start = Math.max(0, state.index - limit + 1);
+    return state.numbers.slice(start, state.index + 1).reverse();
+  }
+
+  function isCalled(n) {
+    return state.index >= 0 && state.numbers.indexOf(n) <= state.index;
+  }
+
+  /********************
+   * LAYOUT SIZING
+   ********************/
+  function setLeftWidthFromHeight() {
+    const h = window.innerHeight;
+    const leftPx = Math.floor(h * LEFT_FRACTION_OF_HEIGHT);
+    document.documentElement.style.setProperty('--leftWidthPx', leftPx + 'px');
+  }
+
+  function sizeGridCells() {
+    // Compute pixels available inside gridPanel (.grid is inside .panel with padding)
+    const gridEl = els.grid;
+    const parent = gridEl.parentElement; // gridPanel
+    const parentStyles = getComputedStyle(parent);
+
+    const padX = parseFloat(parentStyles.paddingLeft) + parseFloat(parentStyles.paddingRight);
+    const padY = parseFloat(parentStyles.paddingTop) + parseFloat(parentStyles.paddingBottom);
+
+    // Available inner dimensions for the grid
+    const availW = parent.clientWidth - padX;
+    const availH = parent.clientHeight - padY;
+
+    // 10 rows, 9 cols, with 4px gaps between
+    const gap = 4;
+    const cellW = Math.floor((availW - gap * (COLS - 1)) / COLS);
+    const cellH = Math.floor((availH - gap * (ROWS - 1)) / ROWS);
+    const cell = Math.max(20, Math.min(cellW, cellH)); // clamp min for readability
+
+    document.documentElement.style.setProperty('--cellPx', cell + 'px');
+  }
+
+  function fitBigNumber() {
+    // Make the big number text fit comfortably in its panel height
+    const panel = document.querySelector('.bigNumberPanel');
+    const text = els.bigNumber;
+
+    const panelStyles = getComputedStyle(panel);
+    const padY = parseFloat(panelStyles.paddingTop) + parseFloat(panelStyles.paddingBottom);
+    const availH = panel.clientHeight - padY;
+
+    // Target the text height to ~70% of panel inner height
+    const targetH = Math.max(24, Math.floor(availH * 0.70));
+    text.style.fontSize = targetH + 'px';
+  }
+
+  function reflow() {
+    setLeftWidthFromHeight();
+    sizeGridCells();
+    fitBigNumber();
+  }
+
+  /********************
+   * RENDER
+   ********************/
+  function renderGrid() {
+    // Build once; then update classes
+    if (!els.grid.hasChildNodes()) {
+      const frag = document.createDocumentFragment();
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const n = r * COLS + c + 1;
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.textContent = n.toString();
+          cell.id = `cell-${n}`;
+          frag.appendChild(cell);
+        }
+      }
+      els.grid.appendChild(frag);
+    }
+
+    const cur = currentNumber();
+    for (let n = 1; n <= NUMBERS; n++) {
+      const cell = document.getElementById(`cell-${n}`);
+      cell.classList.toggle('called', isCalled(n));
+      cell.classList.toggle('current', cur === n);
+    }
+  }
+
+  function renderRecent() {
+    const list = recentList(10);
+    els.recent.replaceChildren();
+    list.forEach((n, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (i === 0 ? ' newest' : '');
+      chip.textContent = n.toString();
+      els.recent.appendChild(chip);
+    });
+
+    els.newest.textContent = list.length ? list[0].toString() : '—';
+  }
+
+  function renderCounter() {
+    els.counter.textContent = `Drawn: ${state.index + 1} / ${NUMBERS}`;
+  }
+
+  function renderBigNumber(pop = false) {
+    const n = currentNumber();
+    const text = n != null ? n.toString().padStart(2, ' ') : '—';
+    els.bigNumber.textContent = text;
+
+    // Add pop animation
+    if (pop) {
+      els.bigNumber.classList.remove('pop');
+      // reflow to restart animation
+      void els.bigNumber.offsetWidth;
+      els.bigNumber.classList.add('pop');
+    }
+  }
+
+  function renderAll(pop = false) {
+    renderGrid();
+    renderRecent();
+    renderCounter();
+    renderBigNumber(pop);
+  }
+
+  /********************
+   * INTERACTIONS
+   ********************/
+  function announce(text) {
+    // Screen reader live region
+    els.live.textContent = text;
+
+    // Speech synthesis (optional)
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.0;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch {}
+  }
+
+  function haptics() {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(20);
+    }
+  }
+
+  function startCooldown() {
+    coolingDown = true;
+    els.btnNext.setAttribute('disabled', 'true');
+
+    // overlay spinner
+    let overlay = els.btnNext.querySelector('.cooldownOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'cooldownOverlay';
+      overlay.innerHTML = '<div class="spinner" role="progressbar" aria-label="Cooling down"></div>';
+      els.btnNext.appendChild(overlay);
+    }
+    overlay.style.display = 'grid';
+
+    setTimeout(() => {
+      coolingDown = false;
+      els.btnNext.removeAttribute('disabled');
+      if (overlay) overlay.style.display = 'none';
+    }, COOLDOWN_MS);
+  }
+
+  function onNext() {
+    if (coolingDown) return;
+    if (state.index >= NUMBERS - 1) {
+      announce("All numbers drawn.");
+      return;
+    }
+    state.index += 1;
+    saveState();
+    renderAll(true);
+    startCooldown();
+    haptics();
+
+    const n = currentNumber();
+    if (typeof n === 'number') {
+      announce(`Number ${n}`);
+    }
+  }
+
+  function onReset() {
+    resetGame(true);
+  }
+
+  // Keyboard: spacebar triggers NEXT
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      onNext();
+    }
+  });
+
+  // Fullscreen helpers
+  async function requestFullscreen() {
+    const docEl = document.documentElement;
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await docEl.requestFullscreen({ navigationUI: "hide" }).catch(()=>{});
+    }
+  }
+
+  // Wake lock
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { /* released */ });
+      } else {
+        alert("Wake Lock API not supported on this browser. The device may sleep.");
+      }
+    } catch (err) {
+      console.warn('WakeLock error:', err);
+    }
+  }
+
+  /********************
+   * INIT
+   ********************/
+  function init() {
+    // Bind UI
+    els.btnNext.addEventListener('click', onNext);
+    els.btnReset.addEventListener('click', onReset);
+    els.btnFullscreen.addEventListener('click', requestFullscreen);
+    els.btnWake.addEventListener('click', requestWakeLock);
+
+    window.addEventListener('resize', () => {
+      reflow();
+    }, { passive: true });
+
+    // Restore or start fresh
+    if (!loadState()) {
+      resetGame(false);
+    }
+
+    // Initial paint + layout
+    renderAll(false);
+    reflow();
+
+    // Attempt wake lock automatically (non-fatal)
+    requestWakeLock();
+  }
+
+  // Boot
+  init();
+})();
+</script>
+</body>
+</html>
