@@ -1,139 +1,386 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bingo Caller – Simple</title>
-<style>
-  :root{--bg:#0b1020;--card:#121933;--ink:#eef2ff;--muted:#9aa3c7;--accent:#e53935;--overscan:32px;--numCol:40vmin;--cell:56px;--gap:6px}
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0f1530);color:var(--ink);min-height:100dvh}
-  .wrap{max-width:none;margin:0 auto;padding:16px}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-  h1{margin:0;font-size:clamp(18px,3vw,28px)}
-  .btn{appearance:none;border:none;border-radius:14px;padding:10px 14px;font-weight:800;cursor:pointer;background:#1a244a;color:var(--ink)}
-  .card{background:linear-gradient(180deg,#121933,#0f1733);border:1px solid #1e2a52;border-radius:18px;padding:12px}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bingo Caller</title>
+  <style>
+    :root {
+      /* Width of the left (number) column scales with viewport height */
+      --numCol: 40vmin;
+      /* Default cell size – recalculated in JavaScript to fill the grid */
+      --cell: 40px;
+      /* Gap between grid cells */
+      --gap: 2px;
+      /* Button colour */
+      --primary: #e53935;
+      /* Highlight colour for called numbers */
+      --highlight: #fff59d;
+    }
 
-  /* Big area */
-  .panel{display:grid;gap:14px}
-  .top{display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap}
-  .now{font-size:clamp(72px,18vw,200px);line-height:1;margin:0;font-weight:900;text-align:center}
-  .callstrip{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-  .chip{background:#0f1530;border:1px solid #233060;border-radius:10px;padding:6px 10px;font-weight:700}
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      background-color: #fafafa;
+      overflow: hidden;
+    }
 
-  /* Grid map */
-  .grid{display:grid;grid-template-columns:repeat(10,var(--cell));gap:var(--gap);justify-content:center}
-  .num{width:var(--cell);height:var(--cell);display:grid;place-items:center;border-radius:12px;border:1px solid #233060;background:#0f1530;color:#cbd5ff;font-weight:800;font-size:calc(var(--cell)*0.38)}
-  .num.hit{background:#ffeb3b;color:#000;border-color:#f57c00;box-shadow:0 0 10px #ff9800;font-weight:900}
-  .num.current{outline:3px solid #10b981}
+    #app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-  /* Big NEXT button */
-  #bigNext{background:var(--accent);color:#fff;border-radius:50%;width:min(40vw,220px);height:min(40vw,220px);font-size:clamp(18px,3.5vw,28px);font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(229,57,53,.7);border:none;transition:transform .08s ease;user-select:none}
-  #bigNext:active{transform:scale(1.05)}
+    /* Left column with current number and controls */
+    .left {
+      width: var(--numCol);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 1rem;
+      box-sizing: border-box;
+      background-color: #ffffff;
+      border-right: 1px solid #e0e0e0;
+    }
 
-  /* Minimal helpers */
-  body.audience #last{grid-column:1 / span 2;grid-row:3;justify-content:center;}
-  .meta{display:flex;justify-content:center;gap:10px;color:var(--muted)}
-  body.audience #bigNext{display:none !important}
+    .current-number {
+      font-size: 24vmin;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      font-family: "Courier New", Courier, monospace;
+      text-align: center;
+      width: 100%;
+      min-height: 1em;
+      user-select: none;
+    }
 
-  /* === Audience animations === */
-  /* Stronger big-number boom */
+    .current-number.pop {
+      animation: pop 0.4s ease-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    #nextButton {
+      margin-top: 1rem;
+      padding: 1rem;
+      font-size: 4vmin;
+      background-color: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      width: 80%;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+      user-select: none;
+    }
+
+    #nextButton:active:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    #nextButton:disabled {
+      background-color: #bdbdbd;
+      cursor: default;
+    }
+
+    #count {
+      margin-top: 0.5rem;
+      font-size: 2.5vmin;
+      user-select: none;
+    }
+
+    #resetButton {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      font-size: 2.5vmin;
+      background-color: #9e9e9e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      width: 60%;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+
+    #resetButton:hover {
+      background-color: #757575;
+    }
+
+    .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 1rem;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* The 10×9 grid for numbers 1–90 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(9, var(--cell));
+      grid-auto-rows: var(--cell);
+      gap: var(--gap);
+      justify-content: center;
+      align-content: start;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .grid .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: calc(var(--cell) * 0.4);
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      color: #212121;
+      position: relative;
+      user-select: none;
+    }
+
+    .grid .cell.called {
+      background-color: var(--highlight);
+      color: #000;
+    }
+
+    .grid .cell.current {
+      border: 3px solid #fbc02d;
+    }
+
+    .grid .cell.pulse {
+      animation: cellPulse 0.8s ease-out;
+    }
+
+    @keyframes cellPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.8);
+      }
+      70% {
+        box-shadow: 0 0 15px 10px rgba(255, 235, 59, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 235, 59, 0);
+      }
+    }
+
+    /* Recent calls strip */
+    .recent-calls {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 0.5rem;
+      justify-content: center;
+      width: 100%;
+      padding-bottom: 0.5rem;
+    }
+
+    .recent-calls .recent-cell {
+      width: calc(var(--cell) * 0.8);
+      height: calc(var(--cell) * 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #eeeeee;
+      border-radius: 4px;
+      font-size: calc(var(--cell) * 0.35);
+      color: #212121;
+      flex: 0 0 auto;
+      user-select: none;
+    }
+
+    .recent-calls .recent-cell.current {
+      background-color: var(--primary);
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>🎉 Bingo Caller (Simple)</h1>
-      <div id="controls">
-        
-        <button class="btn" id="resetBtn">Reset</button>
-      </div>
-    </header>
-
-    <section class="card panel">
-      <div class="top">
-        <h2 class="now" id="now">—</h2>
-        <button id="bigNext">NEXT ▶</button>
-      </div>
-      <div class="meta"><span id="drawnCount">0 / 90 drawn</span></div>
+  <div id="app">
+    <div class="left">
+      <div class="current-number">--</div>
+      <button id="nextButton">NEXT</button>
+      <div id="count">Drawn: 0/90</div>
+      <button id="resetButton">Reset</button>
+    </div>
+    <div class="right">
       <div class="grid" id="grid"></div>
-      <div class="callstrip" id="last"></div>
-    </section>
+      <div class="recent-calls" id="recentCalls"></div>
+    </div>
   </div>
-  
 
-<script>
-(function(){
-  const el=id=>document.getElementById(id);
-  const gridEl=el('grid'), nowEl=el('now'), lastEl=el('last'), drawnCount=el('drawnCount');
-  const bigNext=el('bigNext'), resetBtn=el('resetBtn');
-
-  const storageKey='bingo:simple:v1';
-  let total=90;
-  let order=[...Array(total)].map((_,i)=>i+1);
-  let drawn=[]; let current=null; let canPress=true;
-
-  function shuffle(){
-    order=[...Array(total)].map((_,i)=>i+1);
-    for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
-  }
-  function buildGrid(){
-    gridEl.innerHTML='';
-    for(let i=1;i<=total;i++){
-      const d=document.createElement('div'); d.className='num'; d.dataset.n=i; d.textContent=String(i); gridEl.appendChild(d);
+  <script>
+    // Simple Fisher–Yates shuffle
+    function shuffle(array) {
+      let currentIndex = array.length;
+      let randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
     }
-  }
-  function markGrid(){
-    gridEl.querySelectorAll('.num').forEach(cell=>{ const n=+cell.dataset.n; cell.classList.toggle('hit', drawn.includes(n)); cell.classList.toggle('current', current===n); });
-  }
-  function updateUI(silent){
-    nowEl.textContent=current || '—';
-    drawnCount.textContent=`${drawn.length} / ${total} drawn`;
-    markGrid();
-    lastEl.innerHTML='';
-    drawn.slice(-10).reverse().forEach(n=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=n; lastEl.appendChild(c); });
-    if(!silent){
-      try{ localStorage.setItem(storageKey, JSON.stringify({order, drawn, current, total})); }catch(e){}
+
+    // Global state object
+    let state = { numbers: [], index: 0 };
+
+    // Build the 1–90 grid
+    function buildGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      for (let i = 1; i <= 90; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.num = i;
+        cell.textContent = i;
+        grid.appendChild(cell);
+      }
     }
-  }
-  function nextNumber(){
-    if(drawn.length===total) return;
-    let next=null; for(const n of order){ if(!drawn.includes(n)){ next=n; break; } }
-    drawn.push(next); current=next; updateUI();
-  }
-  function reset(allNew=true){ if(allNew) shuffle(); drawn=[]; current=null; updateUI(); }
-  function load(){
-    try{ const s=JSON.parse(localStorage.getItem(storageKey)||'{}');
-      if(s.total===total && Array.isArray(s.order) && s.order.length===total){ order=s.order; }
-      if(Array.isArray(s.drawn)) drawn=s.drawn.filter(n=>n>=1 && n<=total);
-      if(typeof s.current==='number') current=s.current;
-    }catch(e){}
-  }
 
-  // Init
-  buildGrid(); shuffle(); load(); updateUI(true);
-  // Auto-fit grid to viewport height so the grid never overflows
-  function sizeGrid(){
-    const cols=10, rows=9;
-    const gap = parseFloat(getComputedStyle(gridEl).gap)||6;
-    const rect = gridEl.getBoundingClientRect();
-    const availW = rect.width;
-    const availH = window.innerHeight - rect.top - 16; // 16px bottom padding
-    const cellW = (availW - gap*(cols-1))/cols;
-    const cellH = (availH - gap*(rows-1))/rows;
-    const cell = Math.max(18, Math.floor(Math.min(cellW, cellH)));
-    document.documentElement.style.setProperty('--cell', cell+'px');
-  }
-  sizeGrid();
-  addEventListener('resize', sizeGrid);
-  addEventListener('orientationchange', sizeGrid);
+    // Update the display: current number, counts, grid classes and recent strip
+    function updateDisplay() {
+      const drawnCount = state.index;
+      const currentNumber = state.numbers[state.index - 1] || '--';
+      const currentElem = document.querySelector('.current-number');
+      currentElem.textContent = currentNumber;
+      const countElem = document.getElementById('count');
+      countElem.textContent = 'Drawn: ' + drawnCount + '/90';
+      // update grid cells
+      const drawnSet = new Set(state.numbers.slice(0, state.index));
+      document.querySelectorAll('.grid .cell').forEach(cell => {
+        const num = parseInt(cell.dataset.num, 10);
+        cell.classList.remove('called', 'current');
+        if (drawnSet.has(num)) {
+          cell.classList.add('called');
+        }
+        if (num === currentNumber) {
+          cell.classList.add('current');
+        }
+      });
+      // update recent calls strip
+      const recentList = state.numbers.slice(Math.max(0, state.index - 10), state.index).reverse();
+      const recentDiv = document.getElementById('recentCalls');
+      recentDiv.innerHTML = '';
+      recentList.forEach((num, idx) => {
+        const rc = document.createElement('div');
+        rc.className = 'recent-cell';
+        rc.textContent = num;
+        if (idx === 0) rc.classList.add('current');
+        recentDiv.appendChild(rc);
+      });
+      // disable Next button when all numbers drawn
+      const nextButton = document.getElementById('nextButton');
+      nextButton.disabled = state.index >= state.numbers.length;
+      // adjust cell size after recent calls update
+      updateCellSize();
+    }
 
-  // Events
-  bigNext.addEventListener('click', ()=>{ if(!canPress) return; canPress=false; nextNumber(); setTimeout(()=>canPress=true, 250); });
-  resetBtn.addEventListener('click', ()=>reset(confirm('Reshuffle numbers? OK=new order, Cancel=keep order')));
-  document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); nextNumber(); } });
-})();
-</script>
+    // Draw next number
+    function drawNext() {
+      if (state.index >= state.numbers.length) return;
+      state.index++;
+      // Save progress
+      localStorage.setItem('bingoState', JSON.stringify(state));
+      const currentNumber = state.numbers[state.index - 1];
+      // Trigger big number animation
+      const currentElem = document.querySelector('.current-number');
+      currentElem.classList.remove('pop');
+      // Force reflow to restart animation
+      void currentElem.offsetWidth;
+      currentElem.classList.add('pop');
+      // Trigger cell pulse
+      const targetCell = document.querySelector('.grid .cell[data-num="' + currentNumber + '"]');
+      if (targetCell) {
+        targetCell.classList.remove('pulse');
+        void targetCell.offsetWidth;
+        targetCell.classList.add('pulse');
+      }
+      updateDisplay();
+    }
+
+    // Reset the game with confirmation
+    function resetGame() {
+      if (!confirm('Reset game?')) return;
+      // Generate new shuffled numbers
+      const nums = [];
+      for (let i = 1; i <= 90; i++) nums.push(i);
+      shuffle(nums);
+      state = { numbers: nums, index: 0 };
+      localStorage.setItem('bingoState', JSON.stringify(state));
+      updateDisplay();
+    }
+
+    // Compute and set cell size so grid fills available space
+    function updateCellSize() {
+      const right = document.querySelector('.right');
+      const grid = document.getElementById('grid');
+      const recent = document.getElementById('recentCalls');
+      if (!right) return;
+      const rightRect = right.getBoundingClientRect();
+      const recentHeight = recent ? recent.getBoundingClientRect().height : 0;
+      // space for grid height minus recent calls and a small margin
+      const availableHeight = rightRect.height - recentHeight - 32;
+      const cellHeight = availableHeight / 10;
+      const cellWidth = rightRect.width / 9;
+      const cellSize = Math.floor(Math.min(cellWidth, cellHeight));
+      if (cellSize > 0) {
+        document.documentElement.style.setProperty('--cell', cellSize + 'px');
+      }
+    }
+
+    // Load state from localStorage or initialise a new game
+    function initGame() {
+      const stored = localStorage.getItem('bingoState');
+      let numbers = [];
+      let index = 0;
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed.numbers) && typeof parsed.index === 'number') {
+            numbers = parsed.numbers;
+            index = parsed.index;
+          }
+        } catch (e) {
+          // ignore corrupted state
+        }
+      }
+      if (!numbers.length) {
+        for (let i = 1; i <= 90; i++) numbers.push(i);
+        shuffle(numbers);
+      }
+      state = { numbers: numbers, index: index };
+      buildGrid();
+      updateDisplay();
+    }
+
+    // Attach event handlers
+    window.addEventListener('load', () => {
+      initGame();
+      // NEXT button handler
+      document.getElementById('nextButton').addEventListener('click', drawNext);
+      // Reset button handler
+      document.getElementById('resetButton').addEventListener('click', resetGame);
+      // Spacebar triggers NEXT
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          drawNext();
+        }
+      });
+      // Handle window resize
+      window.addEventListener('resize', updateCellSize);
+    });
+  </script>
 </body>
 </html>
