@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bingo Caller – Simple</title>
 <style>
-  :root{--bg:#0b1020;--card:#121933;--ink:#eef2ff;--muted:#9aa3c7;--accent:#e53935;--overscan:32px}
+  :root{--bg:#0b1020;--card:#121933;--ink:#eef2ff;--muted:#9aa3c7;--accent:#e53935;--overscan:32px;--numCol:40vmin}
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0f1530);color:var(--ink);min-height:100dvh}
@@ -38,11 +38,11 @@
   body.audience { min-height: 100svh; overflow:hidden; }
   html.body.audience, html .audience { height:100svh; }
   body.audience .wrap{max-width:none;width:100svw;min-height:100svh;margin:0 auto;padding:max(var(--overscan), env(safe-area-inset-top)) max(var(--overscan), env(safe-area-inset-right)) max(var(--overscan), env(safe-area-inset-bottom)) max(var(--overscan), env(safe-area-inset-left)); box-sizing:border-box; }
-  body.audience .panel{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr auto;gap:clamp(10px,2vh,24px);min-height:calc(100svh - (var(--overscan)*2));} 
-  body.audience .top{grid-column:1;grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;}
+  body.audience .panel{display:grid;grid-template-columns:var(--numCol) 1fr;grid-template-rows:auto 1fr auto;gap:clamp(10px,2vh,24px);min-height:calc(100svh - (var(--overscan)*2));} 
+  body.audience .top{grid-column:1;grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;width:var(--numCol);}
   body.audience .card{padding:0;border:0;border-radius:0;background:transparent;}
   /* Big number scales automatically; JS may override font-size for perfect fit */
-  body.audience .now{font-size:clamp(192px, min(44vmin, 36vmax), 960px)}
+  body.audience .now{font-size:calc(var(--numCol) * 0.72); font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; line-height:0.9;}
 
   /* Grid fits by exact cell sizing computed in JS */
   :root{--cell:64px; --gap: clamp(6px,1.2vmin,20px);}  
@@ -219,9 +219,7 @@
     document.documentElement.style.setProperty('--cell', cell + 'px');
 
     // Big number uses the top row height
-    const topRect = top.getBoundingClientRect();
-    const targetNow = Math.floor(Math.max(60, Math.min(topRect.height * 0.9, wrap.clientWidth * 0.22)));
-    nowEl.style.fontSize = targetNow + 'px';
+    // Font-size handled by CSS via --numCol to keep left column stable; no JS sizing needed here.
   }
   sizeAudience();
   addEventListener('resize', sizeAudience);
