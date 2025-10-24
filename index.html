@@ -18,7 +18,9 @@
     --primary: #ff3b3f;      /* lively red */
     --primaryDark: #d8262b;  /* press state */
     --accent: #00c9b7;       /* teal for current outline */
-    --called: #ffd54f;       /* warm game-show yellow */
+
+    /* Called-cell colour is dynamic per game; JS sets this */
+    --called: #ffd54f;       /* default warm yellow */
 
     /* Brighter, fun background gradient */
     --bg1: #121321;
@@ -269,6 +271,72 @@
     pointer-events: none;
     z-index: 999;
   }
+
+  /* -------- Reset Color Modal -------- */
+  .modal.hidden { display: none; }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    display: grid;
+    place-items: center;
+    z-index: 1000;
+  }
+
+  .modalBox {
+    background: #1a1633;
+    border-radius: 18px;
+    padding: 24px;
+    width: min(92%, 520px);
+    box-shadow: 0 0 40px rgba(0,0,0,0.45);
+    border: 2px solid rgba(255,255,255,0.18);
+    text-align: center;
+  }
+
+  .modalTitle {
+    font-size: 1.6rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .modalText {
+    opacity: 0.9;
+    margin-bottom: 18px;
+  }
+
+  .colorGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 14px;
+  }
+
+  .colorBtn {
+    display: grid;
+    place-items: center;
+    padding: 18px 12px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.18);
+    color: #0b0b0b;
+    font-weight: 900;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: var(--shadow);
+  }
+  .colorBtn:active { transform: translateY(1px); }
+
+  .modalFooter {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+  }
+  .modalNote {
+    opacity: 0.75;
+    font-size: 0.95rem;
+  }
 </style>
 </head>
 <body>
@@ -289,7 +357,7 @@
 
       <div class="panel rowPad counterRow">
         <div class="counter" id="counter">Drawn: 0 / 90</div>
-        <div class="ver">v1.1.0</div>
+        <div class="ver">v1.2.0</div>
       </div>
 
       <div class="panel rowPad resetRow">
@@ -315,6 +383,27 @@
   <!-- Confetti canvas -->
   <canvas id="fx" class="fx"></canvas>
 
+  <!-- Reset Color Modal -->
+  <div id="resetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+    <div class="modalBox">
+      <div id="resetTitle" class="modalTitle">Start new game</div>
+      <div class="modalText">Choose a highlight colour for called numbers:</div>
+
+      <div class="colorGrid">
+        <div class="colorBtn" data-color="Yellow" data-hex="#ffd54f" style="background:#ffd54f;">Yellow</div>
+        <div class="colorBtn" data-color="Red"    data-hex="#ff6a6a" style="background:#ff6a6a;">Red</div>
+        <div class="colorBtn" data-color="Blue"   data-hex="#80d8ff" style="background:#80d8ff;">Blue</div>
+        <div class="colorBtn" data-color="Brown"  data-hex="#c49a6c" style="background:#c49a6c;">Brown</div>
+        <div class="colorBtn" data-color="Pink"   data-hex="#ff99cc" style="background:#ff99cc;">Pink</div>
+        <div class="colorBtn" data-color="Green"  data-hex="#a5d6a7" style="background:#a5d6a7;">Green</div>
+      </div>
+
+      <div class="modalFooter">
+        <div class="modalNote">You can change colour on every reset.</div>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function(){
   "use strict";
@@ -324,8 +413,8 @@
    ********************/
   const NUMBERS = 90, ROWS = 10, COLS = 9, COOLDOWN_MS = 1000;
   const LEFT_FRACTION = 0.40;
-  const STORAGE_KEY = 'bingo_state_v1';
-  const SNAPSHOT_KEY = 'bingo_snapshot_v1';
+  const STORAGE_KEY = 'bingo_state_v2';     // bumped version to include calledColor
+  const SNAPSHOT_KEY = 'bingo_snapshot_v2';
 
   const els = {
     grid: document.getElementById('grid'),
@@ -338,19 +427,31 @@
     btnFullscreen: document.getElementById('btnFullscreen'),
     btnWake: document.getElementById('btnWake'),
     live: document.getElementById('live'),
-    fx: document.getElementById('fx')
+    fx: document.getElementById('fx'),
+    resetModal: document.getElementById('resetModal')
   };
 
   let coolingDown = false;
   let wakeLock = null;
 
   // Game state
-  let state = { numbers: [], index: -1, seed: 0, updatedAt: 0 };
+  let state = {
+    numbers: [],
+    index: -1,
+    seed: 0,
+    updatedAt: 0,
+    calledColorName: 'Yellow',
+    calledColorHex: '#ffd54f'
+  };
 
   /********************
    * UTILITIES
    ********************/
   const nowTs = () => Date.now();
+
+  function setCalledCssVar(hex){
+    document.documentElement.style.setProperty('--called', hex);
+  }
 
   function seededRandom(seed) {
     // Simple mulberry32 PRNG for reproducibility
@@ -380,6 +481,8 @@
       index: state.index,
       seed: state.seed,
       updatedAt: state.updatedAt,
+      calledColorName: state.calledColorName,
+      calledColorHex: state.calledColorHex,
       drawn: state.index + 1,
       remaining: Math.max(0, NUMBERS - (state.index + 1))
     }, null, 2));
@@ -392,37 +495,30 @@
       const obj = JSON.parse(raw);
       if (!Array.isArray(obj.numbers) || obj.numbers.length !== NUMBERS) return false;
       if (typeof obj.index !== 'number' || typeof obj.seed !== 'number') return false;
-      state = obj;
+      state = Object.assign({
+        calledColorName: 'Yellow',
+        calledColorHex: '#ffd54f'
+      }, obj);
+      setCalledCssVar(state.calledColorHex);
       return true;
     } catch {
       return false;
     }
   }
 
-  function resetGame(confirmNeeded = true) {
-    if (confirmNeeded && !window.confirm('Reset game and reshuffle?')) return;
+  function performResetWithColor(name, hex){
+    state.calledColorName = name;
+    state.calledColorHex = hex;
+    setCalledCssVar(hex);
+
     state.seed = Math.floor(Math.random() * 0xFFFFFFFF);
     const rand = seededRandom(state.seed);
-
     state.numbers = Array.from({length: NUMBERS}, (_, i) => i + 1);
     fisherYatesShuffle(state.numbers, rand);
     state.index = -1;
     saveState();
     renderAll();
-    announce('Game reset. Ready.');
-  }
-
-  function currentNumber() {
-    return state.index >= 0 ? state.numbers[state.index] : null;
-  }
-
-  function recentList(limit = 10) {
-    const start = Math.max(0, state.index - limit + 1);
-    return state.numbers.slice(start, state.index + 1).reverse();
-  }
-
-  function isCalled(n) {
-    return state.index >= 0 && state.numbers.indexOf(n) <= state.index;
+    announce(`New game with ${name} highlight. Ready.`);
   }
 
   /********************
@@ -444,15 +540,13 @@
   }
 
   function sizeGridCells() {
-    // Compute pixels available inside grid panel
     const gridPanel = document.querySelector('.gridPanel');
     const {w: availW, h: availH} = exactInnerBox(gridPanel);
 
-    // 10 rows, 9 cols, with 4px gaps between
     const gap = 4;
     const cellW = Math.floor((availW - gap * (COLS - 1)) / COLS);
     const cellH = Math.floor((availH - gap * (ROWS - 1)) / ROWS);
-    const cell = Math.max(22, Math.min(cellW, cellH)); // clamp min for readability
+    const cell = Math.max(22, Math.min(cellW, cellH));
     document.documentElement.style.setProperty('--cellPx', cell + 'px');
   }
 
@@ -464,29 +558,22 @@
     // Use widest typical sample (“88”) so we always fit
     const sample = '88';
 
-    // Temporarily set to a known size to measure actual width
     const el = els.bigNumber;
     const oldText = el.textContent;
     const oldFontSize = el.style.fontSize;
 
     el.textContent = sample;
-    el.style.fontSize = '100px';      // baseline for measurement
-    el.style.visibility = 'hidden';   // no flicker while measuring
-    // Force layout
+    el.style.fontSize = '100px';
+    el.style.visibility = 'hidden';
     void el.offsetWidth;
 
     const measuredWidthAt100 = el.clientWidth || el.getBoundingClientRect().width || 200;
 
-    // How big can we be given width? Leave ~10% breathing room.
     const widthLimited = Math.floor((availW * 0.90) * (100 / measuredWidthAt100));
-
-    // How big can we be given height? ~72% of panel for comfort.
     const heightLimited = Math.floor(availH * 0.72);
 
-    // Pick the smaller to guarantee no clipping
     const finalPx = Math.max(28, Math.min(widthLimited, heightLimited));
 
-    // Apply and restore actual content
     el.style.fontSize = finalPx + 'px';
     el.style.visibility = '';
     el.textContent = oldText;
@@ -501,8 +588,20 @@
   /********************
    * RENDER
    ********************/
+  function currentNumber() {
+    return state.index >= 0 ? state.numbers[state.index] : null;
+  }
+
+  function recentList(limit = 10) {
+    const start = Math.max(0, state.index - limit + 1);
+    return state.numbers.slice(start, state.index + 1).reverse();
+  }
+
+  function isCalled(n) {
+    return state.index >= 0 && state.numbers.indexOf(n) <= state.index;
+  }
+
   function renderGrid() {
-    // Build once; then update classes
     if (!els.grid.hasChildNodes()) {
       const frag = document.createDocumentFragment();
       for (let r = 0; r < ROWS; r++) {
@@ -548,10 +647,8 @@
     const text = n != null ? n.toString().padStart(2, ' ') : '—';
     els.bigNumber.textContent = text;
 
-    // Add pop animation
     if (pop) {
       els.bigNumber.classList.remove('pop');
-      // reflow to restart animation
       void els.bigNumber.offsetWidth;
       els.bigNumber.classList.add('pop');
     }
@@ -660,10 +757,7 @@
    * INTERACTIONS
    ********************/
   function announce(text) {
-    // Screen reader live region
     els.live.textContent = text;
-
-    // Speech synthesis (optional)
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 1.0;
@@ -682,7 +776,6 @@
     coolingDown = true;
     els.btnNext.setAttribute('disabled', 'true');
 
-    // overlay spinner
     let overlay = els.btnNext.querySelector('.cooldownOverlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -710,15 +803,36 @@
     renderAll(true);
     startCooldown();
     haptics();
-    confettiFromBigNumber(); // 🎉
+    confettiFromBigNumber();
     const n = currentNumber();
     if (typeof n === 'number') {
       announce(`Number ${n}`);
     }
   }
 
+  // Show custom modal instead of confirm()
   function onReset() {
-    resetGame(true);
+    els.resetModal.classList.remove('hidden');
+  }
+
+  // Wire up colour modal buttons
+  function setupResetModal(){
+    els.resetModal.addEventListener('click', (e)=>{
+      // Clicking outside the box closes modal without resetting
+      if (e.target === els.resetModal) {
+        els.resetModal.classList.add('hidden');
+      }
+    });
+
+    const btns = els.resetModal.querySelectorAll('.colorBtn');
+    btns.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const name = btn.getAttribute('data-color');
+        const hex = btn.getAttribute('data-hex');
+        els.resetModal.classList.add('hidden');
+        performResetWithColor(name, hex);
+      });
+    });
   }
 
   // Keyboard: spacebar triggers NEXT
@@ -756,11 +870,18 @@
   /********************
    * INIT
    ********************/
+  function reflowAndRender(){
+    renderAll(false);
+    reflow();
+  }
+
   function init() {
     els.btnNext.addEventListener('click', onNext);
     els.btnReset.addEventListener('click', onReset);
     els.btnFullscreen.addEventListener('click', requestFullscreen);
     els.btnWake.addEventListener('click', requestWakeLock);
+
+    setupResetModal();
 
     const ro = new ResizeObserver(()=>{ reflow(); });
     ro.observe(document.body);
@@ -768,18 +889,18 @@
     window.addEventListener('orientationchange', ()=>{ setTimeout(reflow, 120); });
 
     if (!loadState()) {
-      resetGame(false);
+      // First run: open modal to pick a colour, then perform reset
+      els.resetModal.classList.remove('hidden');
+    } else {
+      // Apply stored called color to CSS var
+      setCalledCssVar(state.calledColorHex);
+      reflowAndRender();
     }
-
-    // Initial paint + layout
-    renderAll(false);
-    reflow();
 
     // Attempt wake lock automatically (non-fatal)
     requestWakeLock();
   }
 
-  // Boot
   init();
 })();
 </script>
