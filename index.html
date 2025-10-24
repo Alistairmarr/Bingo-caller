@@ -68,16 +68,18 @@
   }
 
   .bigNumber {
-    font-variant-numeric: tabular-nums;
-    font-weight: 800;
-    line-height: 0.9;
-    letter-spacing: -0.02em;
-    text-shadow: 0 12px 24px rgba(0,0,0,0.5);
-    font-size: 24vmin; /* will be resized by JS */
-    will-change: transform;
-    transform-origin: center;
-    user-select: none;
-  }
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-shadow: 0 12px 24px rgba(0,0,0,0.5);
+  font-size: 24vmin; /* JS will override */
+  will-change: transform;
+  transform-origin: center;
+  user-select: none;
+  white-space: pre;            /* <-- add this */
+}
+
 
   @keyframes breathe {
     0% { transform: scale(1); }
@@ -397,11 +399,41 @@
   }
 
   function fitBigNumber(){
-    const panel = document.querySelector('.bigNumberPanel');
-    const {h} = exactInnerBox(panel);
-    const target = Math.max(28, Math.floor(h*0.72));
-    els.bigNumber.style.fontSize = target+'px';
-  }
+  const panel = document.querySelector('.bigNumberPanel');
+  const { w: availW, h: availH } = exactInnerBox(panel);
+
+  // Use the widest typical sample (“88”) so we always fit
+  const sample = '88';
+
+  // Temporarily set the big number to a known size to measure actual width
+  const el = els.bigNumber;
+  const oldText = el.textContent;
+  const oldFontSize = el.style.fontSize;
+
+  el.textContent = sample;
+  el.style.fontSize = '100px';      // baseline for measurement
+  el.style.visibility = 'hidden';   // no flicker while measuring
+  // Force layout
+  void el.offsetWidth;
+
+  const measuredWidthAt100 = el.clientWidth || el.getBoundingClientRect().width || 200;
+
+  // How big can we be given width? Leave ~10% horizontal breathing room.
+  const widthLimited = Math.floor((availW * 0.90) * (100 / measuredWidthAt100));
+
+  // How big can we be given height?
+  // Target ~72% of the panel’s inner height to avoid feeling cramped
+  const heightLimited = Math.floor(availH * 0.72);
+
+  // Pick the smaller to guarantee no clipping
+  const finalPx = Math.max(28, Math.min(widthLimited, heightLimited));
+
+  // Apply and restore actual content
+  el.style.fontSize = finalPx + 'px';
+  el.style.visibility = '';
+  el.textContent = oldText;
+}
+
 
   function reflow(){
     setLeftWidthFromHeight();
@@ -543,3 +575,4 @@
 </script>
 </body>
 </html>
+
