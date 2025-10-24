@@ -21,7 +21,6 @@
     --shadow: 0 10px 30px rgba(0,0,0,.25);
   }
 
-  /* Modern dark gradient background */
   html,body{
     height:100%;
     margin:0;
@@ -42,7 +41,6 @@
     box-sizing:border-box;
   }
 
-  /* LEFT PANEL */
   .left{
     width:var(--numCol);
     background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
@@ -71,8 +69,16 @@
     width:100%;
     user-select:none;
     text-shadow: 0 6px 24px rgba(0,0,0,.35);
+    /* subtle idle animation */
+    animation: breathe 3.2s ease-in-out infinite;
   }
-  .current-number.pop{ animation: pop .42s cubic-bezier(.2,.9,.2,1); }
+  @keyframes breathe{
+    0%   { transform: scale(1);        filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+    50%  { transform: scale(1.02);     filter: drop-shadow(0 0 10px rgba(255,255,255,.12)); }
+    100% { transform: scale(1);        filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  }
+
+  .current-number.pop{ animation: pop .42s cubic-bezier(.2,.9,.2,1), breathe 3.2s ease-in-out infinite .42s; }
   @keyframes pop{
     0%{ transform:scale(1); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
     50%{ transform:scale(1.18); filter: drop-shadow(0 0 20px rgba(255,255,255,.25)); }
@@ -121,7 +127,6 @@
     user-select:none;
   }
 
-  /* RIGHT PANEL */
   .right{
     flex:1;
     min-width:0;
@@ -137,10 +142,9 @@
     box-shadow: var(--shadow);
   }
 
-  /* GRID */
   .grid-wrap{
-    flex:1;                 /* Take all remaining height so we can size the grid to it */
-    min-height:0;           /* allow child to measure correctly */
+    flex:1;
+    min-height:0;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -153,7 +157,6 @@
     gap: var(--gap);
     align-content:start;
     justify-content:center;
-    /* prevent accidental scroll while we auto-fit cells */
     max-width: 100%;
   }
   .cell{
@@ -184,7 +187,6 @@
     100%{ transform:scale(1); box-shadow: 0 0 0 0 rgba(62,166,255,0); }
   }
 
-  /* Recent Calls */
   .recent{
     display:flex;
     gap:8px;
@@ -212,11 +214,9 @@
     box-shadow: 0 6px 18px rgba(255,61,85,.35);
   }
 
-  /* Scrollbar minimal */
   .recent::-webkit-scrollbar{ height: 8px; }
   .recent::-webkit-scrollbar-thumb{ background:#2a313a; border-radius:6px; }
 
-  /* Make sure small portrait still works */
   @media (max-aspect-ratio: 1/1){
     :root{ --numCol: 44vmin; }
   }
@@ -244,150 +244,5 @@
   </div>
 
 <script>
-  // Fisher–Yates shuffle
   function shuffle(arr){
-    for(let i=arr.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [arr[i],arr[j]]=[arr[j],arr[i]];
-    }
-    return arr;
-  }
-
-  // State
-  let state = { numbers: [], index: 0 };
-
-  // Build grid 1..90
-  function buildGrid(){
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
-    for(let i=1;i<=90;i++){
-      const d = document.createElement('div');
-      d.className = 'cell';
-      d.dataset.num = i;
-      d.textContent = i;
-      grid.appendChild(d);
-    }
-  }
-
-  // Size cells to fit: never overflow bottom
-  function updateCellSize(){
-    const rightPanel = document.querySelector('.right');
-    const gridWrap   = document.querySelector('.grid-wrap');
-    const grid       = document.getElementById('grid');
-    const recent     = document.getElementById('recentCalls');
-
-    const styles = getComputedStyle(document.documentElement);
-    const gap = parseFloat(styles.getPropertyValue('--gap')) || 0;
-
-    // Available height for grid (inside grid-wrap)
-    const wrapRect = gridWrap.getBoundingClientRect();
-    // Account for panel inner padding (12px on each side) already in CSS, grid uses exact area inside
-    // We must subtract the total gap height between 10 rows (9 gaps)
-    const availH = wrapRect.height - gap*9;
-    // Available width for 9 columns (8 gaps). Limit by grid-wrap inner width.
-    const availW = gridWrap.clientWidth - gap*8;
-
-    const sizeH = Math.floor(availH / 10);
-    const sizeW = Math.floor(availW / 9);
-    const size  = Math.max(22, Math.min(sizeH, sizeW)); // keep readable minimum
-
-    document.documentElement.style.setProperty('--cell', size + 'px');
-  }
-
-  // Render UI
-  function updateDisplay(){
-    const drawn = state.index;
-    const current = state.numbers[drawn-1] ?? '--';
-    const currentEl = document.getElementById('current');
-    currentEl.textContent = current;
-
-    document.getElementById('count').textContent = `Drawn: ${drawn}/90`;
-
-    const drawnSet = new Set(state.numbers.slice(0, drawn));
-    document.querySelectorAll('.grid .cell').forEach(cell=>{
-      const n = +cell.dataset.num;
-      cell.classList.toggle('called', drawnSet.has(n));
-      cell.classList.toggle('current', n === current);
-    });
-
-    // Recent strip (last 10, newest first)
-    const recent = document.getElementById('recentCalls');
-    recent.innerHTML = '';
-    state.numbers.slice(Math.max(0, drawn-10), drawn).reverse().forEach((n,idx)=>{
-      const chip = document.createElement('div');
-      chip.className = 'recent-chip' + (idx===0 ? ' current':'');
-      chip.textContent = n;
-      recent.appendChild(chip);
-    });
-
-    // Button state
-    document.getElementById('nextButton').disabled = drawn >= state.numbers.length;
-
-    // Ensure size correct after DOM changes
-    updateCellSize();
-  }
-
-  function drawNext(){
-    if(state.index >= state.numbers.length) return;
-    state.index++;
-    localStorage.setItem('bingoState', JSON.stringify(state));
-
-    const current = state.numbers[state.index-1];
-    // Big number pop
-    const currentEl = document.getElementById('current');
-    currentEl.classList.remove('pop'); void currentEl.offsetWidth; currentEl.classList.add('pop');
-    // Cell pulse
-    const cell = document.querySelector(`.cell[data-num="${current}"]`);
-    if(cell){ cell.classList.remove('pulse'); void cell.offsetWidth; cell.classList.add('pulse'); }
-
-    updateDisplay();
-  }
-
-  function resetGame(){
-    if(!confirm('Reset game?')) return;
-    const nums = Array.from({length:90},(_,i)=>i+1);
-    shuffle(nums);
-    state = { numbers: nums, index: 0 };
-    localStorage.setItem('bingoState', JSON.stringify(state));
-    updateDisplay();
-  }
-
-  function init(){
-    // State restore
-    try{
-      const saved = JSON.parse(localStorage.getItem('bingoState')||'null');
-      if(saved && Array.isArray(saved.numbers) && typeof saved.index==='number'){
-        state = saved;
-      }else{
-        const nums = Array.from({length:90},(_,i)=>i+1);
-        shuffle(nums);
-        state = { numbers: nums, index: 0 };
-      }
-    }catch{
-      const nums = Array.from({length:90},(_,i)=>i+1);
-      shuffle(nums);
-      state = { numbers: nums, index: 0 };
-    }
-
-    buildGrid();
-    updateDisplay();
-
-    document.getElementById('nextButton').addEventListener('click', drawNext);
-    document.getElementById('resetButton').addEventListener('click', resetGame);
-
-    window.addEventListener('keydown', e=>{
-      if(e.code === 'Space'){ e.preventDefault(); drawNext(); }
-    });
-
-    // Resize handling (use ResizeObserver for robustness)
-    const ro = new ResizeObserver(()=>updateCellSize());
-    ro.observe(document.querySelector('.right'));
-    ro.observe(document.querySelector('.grid-wrap'));
-    window.addEventListener('orientationchange', ()=>setTimeout(updateCellSize, 50));
-    window.addEventListener('load', updateCellSize);
-  }
-
-  init();
-</script>
-</body>
-</html>
+    for(let i=arr.leng
