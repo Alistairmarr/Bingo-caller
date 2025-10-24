@@ -32,23 +32,6 @@
   #bigNext{background:var(--accent);color:#fff;border-radius:50%;width:min(40vw,220px);height:min(40vw,220px);font-size:clamp(18px,3.5vw,28px);font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(229,57,53,.7);border:none;transition:transform .08s ease;user-select:none}
   #bigNext:active{transform:scale(1.05)}
 
-  /* Audience mode */
-  body.audience header, body.audience #controls{display:none}
-  /* Fill any screen; pad for overscan/safe-areas */
-  body.audience { min-height: 100svh; overflow:hidden; }
-  html.body.audience, html .audience { height:100svh; }
-  body.audience .wrap{max-width:none;width:100svw;min-height:100svh;margin:0 auto;padding:max(var(--overscan), env(safe-area-inset-top)) max(var(--overscan), env(safe-area-inset-right)) max(var(--overscan), env(safe-area-inset-bottom)) max(var(--overscan), env(safe-area-inset-left)); box-sizing:border-box; }
-  body.audience .panel{display:grid;grid-template-columns:var(--numCol) 1fr;grid-template-rows:auto 1fr auto;gap:clamp(10px,2vh,24px);min-height:calc(100svh - (var(--overscan)*2));} 
-  body.audience .top{grid-column:1;grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;width:var(--numCol);}
-  body.audience .card{padding:0;border:0;border-radius:0;background:transparent;}
-  /* Big number scales automatically; JS may override font-size for perfect fit */
-  body.audience .now{font-size:calc(var(--numCol) * 0.72); font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; line-height:0.9;}
-
-  /* Grid fits by exact cell sizing computed in JS */
-  :root{--cell:64px; --gap: clamp(6px,1.2vmin,20px);}  
-  body.audience .grid{grid-column:2;grid-row:1 / span 2;gap:var(--gap);grid-template-columns:repeat(10, var(--cell));justify-content:center;}
-  body.audience .num{width:var(--cell);height:var(--cell);font-size:calc(var(--cell)*0.38);border-radius:clamp(8px,1vmin,16px)}
-
   /* Minimal helpers */
   body.audience #last{grid-column:1 / span 2;grid-row:3;justify-content:center;}
   .meta{display:flex;justify-content:center;gap:10px;color:var(--muted)}
@@ -78,7 +61,7 @@
       <div class="callstrip" id="last"></div>
     </section>
   </div>
-  <div class="fx-layer" id="fx"></div>
+  
 
 <script>
 (function(){
@@ -86,23 +69,10 @@
   const gridEl=el('grid'), nowEl=el('now'), lastEl=el('last'), drawnCount=el('drawnCount');
   const bigNext=el('bigNext'), resetBtn=el('resetBtn');
 
-  const params=new URLSearchParams(location.search);
-  const isAudience=params.get('view')==='audience';
-  if(isAudience) document.body.classList.add('audience');
-  // Optional overscan padding for TVs: use ?overscan=px
-  if(params.get('overscan')){
-    const ov = Math.max(0, parseInt(params.get('overscan'),10)||0);
-    document.documentElement.style.setProperty('--overscan', ov+'px');
-  }
-
   const storageKey='bingo:simple:v1';
-  let prevCurrent = null; // for audience animation detection
-
   let total=90;
   let order=[...Array(total)].map((_,i)=>i+1);
   let drawn=[]; let current=null; let canPress=true;
-
-  const channel=('BroadcastChannel' in window)? new BroadcastChannel('bingo-simple'): null;
 
   function shuffle(){
     order=[...Array(total)].map((_,i)=>i+1);
@@ -123,7 +93,9 @@
     markGrid();
     lastEl.innerHTML='';
     drawn.slice(-10).reverse().forEach(n=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=n; lastEl.appendChild(c); });
-    if(!silent) saveAndBroadcast();
+    if(!silent){
+      try{ localStorage.setItem(storageKey, JSON.stringify({order, drawn, current, total})); }catch(e){}
+    }
   }
   function nextNumber(){
     if(drawn.length===total) return;
@@ -131,12 +103,6 @@
     drawn.push(next); current=next; updateUI();
   }
   function reset(allNew=true){ if(allNew) shuffle(); drawn=[]; current=null; updateUI(); }
-
-  function saveAndBroadcast(){
-    try{ localStorage.setItem(storageKey, JSON.stringify({order, drawn, current, total})); }catch(e){}
-    const snap={type:'state', drawn, current, total};
-    if(channel) channel.postMessage(snap);
-  }
   function load(){
     try{ const s=JSON.parse(localStorage.getItem(storageKey)||'{}');
       if(s.total===total && Array.isArray(s.order) && s.order.length===total){ order=s.order; }
@@ -144,127 +110,14 @@
       if(typeof s.current==='number') current=s.current;
     }catch(e){}
   }
-  function applyState(s){
-    if(!s) return;
-    const was = current;
-    drawn = s.drawn || [];
-    current = ('current' in s) ? s.current : null;
-    updateUI(true);
-    if(isAudience && current !== was && current != null){
-      try{ triggerAudienceAnim(); }catch(_){}
-    }
-  }
-
-      if(!w){ try{ w=window.open('about:blank','_blank','noopener'); if(w) w.location.href=url.toString(); }catch(e){ location.href=url.toString(); } }
-  }
 
   // Init
-  buildGrid(); shuffle();
-  if(!isAudience){ load(); }
-  else { try{ const snap=localStorage.getItem(storageKey); if(snap){ const s=JSON.parse(snap); applyState({drawn:s.drawn,current:s.current,total:s.total}); } }catch(e){} }
-  updateUI(true);
-
-  // Audience auto-fit sizing
-  function sizeAudience(){
-    if(!isAudience) return;
-    const wrap = document.querySelector('.wrap');
-    const panel = document.querySelector('.panel');
-    const top = document.querySelector('.top');
-    if(!wrap || !panel || !top) return;
-
-    const styles = getComputedStyle(document.documentElement);
-    const gapVar = styles.getPropertyValue('--gap');
-    const gap = parseFloat(gapVar) || parseFloat(getComputedStyle(gridEl).gap) || 8;
-    const cols = 10, rows = 9;
-
-    // Use the actual grid box as the sizing reference so nothing gets cut off
-    const gridRect = gridEl.getBoundingClientRect();
-    const gridAvailW = Math.max(0, gridRect.width);
-    const gridAvailH = Math.max(0, gridRect.height);
-
-    const cellW = (gridAvailW - gap*(cols-1)) / cols;
-    const cellH = (gridAvailH - gap*(rows-1)) / rows;
-    const cell = Math.floor(Math.max(20, Math.min(cellW, cellH)));
-    document.documentElement.style.setProperty('--cell', cell + 'px');
-
-    // Big number uses the top row height
-    // Font-size handled by CSS via --numCol to keep left column stable; no JS sizing needed here.
-  }
-  sizeAudience();
-  addEventListener('resize', sizeAudience);
-  addEventListener('orientationchange', sizeAudience);
-  const ro = new ResizeObserver(sizeAudience); ro.observe(document.body);
-
-  function triggerAudienceAnim(){
-    // Big number boom
-    nowEl.classList.remove('boom');
-    void nowEl.offsetWidth; // reflow to restart
-    nowEl.classList.add('boom');
-
-    // Grid cell glow
-    const cell = gridEl.querySelector(`.num[data-n="${current}"]`);
-    if(cell){
-      cell.classList.remove('flash2');
-      void cell.offsetWidth;
-      cell.classList.add('flash2');
-      cell.addEventListener('animationend', ()=>cell.classList.remove('flash2'), {once:true});
-    }
-
-    // Confetti burst + ripple
-    const fx = document.getElementById('fx');
-    if(!fx) return;
-    const rect = nowEl.getBoundingClientRect();
-    const cx = rect.left + rect.width/2;
-    const cy = rect.top + rect.height/2;
-
-    // Ripple ring
-    const ring = document.createElement('div');
-    ring.className = 'ripple';
-    ring.style.left = cx + 'px';
-    ring.style.top = cy + 'px';
-    ring.style.animation = 'ripple 800ms ease-out forwards';
-    fx.appendChild(ring);
-    ring.addEventListener('animationend', ()=> ring.remove(), {once:true});
-
-    // Confetti pieces
-    const colors = ['#fbbf24','#60a5fa','#34d399','#f472b6','#c084fc','#f87171'];
-    const pieces = Math.min(36, Math.max(20, Math.round(window.innerWidth/45))); // scale by width
-    for(let i=0;i<pieces;i++){
-      const t = (i/pieces) * Math.PI * 2; // even spread
-      const spread = 140 + Math.random()*80; // px
-      const dx = Math.cos(t) * spread * (0.7 + Math.random()*0.6);
-      const dy = Math.sin(t) * spread * (0.7 + Math.random()*0.6);
-      const rot = (180 + Math.random()*540) * (Math.random()>0.5?1:-1);
-      const p = document.createElement('span');
-      p.className = 'confetti';
-      p.style.left = cx + 'px';
-      p.style.top = cy + 'px';
-      p.style.background = colors[i % colors.length];
-      p.style.setProperty('--x', dx+'px');
-      p.style.setProperty('--y', dy+'px');
-      p.style.setProperty('--rot', rot+'deg');
-      p.style.animation = `confetti ${700 + Math.random()*400}ms cubic-bezier(.15,.9,.1,1) forwards`;
-      fx.appendChild(p);
-      p.addEventListener('animationend', ()=> p.remove(), {once:true});
-    }
-  }
-
-  // Wiring
-  if(channel){
-    channel.onmessage=(ev)=>{ const msg=ev.data||{}; if(isAudience && msg.type==='state'){ applyState(msg); } };
-  }
+  buildGrid(); shuffle(); load(); updateUI(true);
 
   // Events
-  if(!isAudience){
-    bigNext.addEventListener('click', ()=>{ if(!canPress) return; canPress=false; nextNumber(); setTimeout(()=>canPress=true, 250); });
-    resetBtn.addEventListener('click', ()=>reset(confirm('Reshuffle numbers? OK=new order, Cancel=keep order')));
-    
-    document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); nextNumber(); } });
-  } else {
-    // Audience: allow spacebar to advance if opened with ?control=1
-    const control = params.get('control')==='1';
-    if(control){ document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); nextNumber(); } }); }
-  }
+  bigNext.addEventListener('click', ()=>{ if(!canPress) return; canPress=false; nextNumber(); setTimeout(()=>canPress=true, 250); });
+  resetBtn.addEventListener('click', ()=>reset(confirm('Reshuffle numbers? OK=new order, Cancel=keep order')));
+  document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); nextNumber(); } });
 })();
 </script>
 </body>
