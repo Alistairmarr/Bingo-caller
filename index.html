@@ -9,36 +9,39 @@
 <title>Bingo Caller</title>
 <style>
   :root{
-    /* Left column width ≈ 40% of viewport height (like 40vmin) */
-    --numColFractionOfHeight: 0.40;
+    /* Layout */
+    --numColFractionOfHeight: 0.40; /* ≈40vmin */
     --gap: 10px;
     --panelRadius: 18px;
 
-    /* Retro 90s Game Show palette: reds, yellows, teal accents */
+    /* Core UI colors (NEXT button red stays on-brand) */
     --primary: #ff3b3f;      /* lively red */
     --primaryDark: #d8262b;  /* press state */
-    --accent: #00c9b7;       /* teal for current outline */
 
-    /* Called-cell colour is dynamic per game; JS sets this */
-    --called: #ffd54f;       /* default warm yellow */
+    /* Dynamic per-game variables (set by JS) */
+    --accent: #00c9b7;       /* outline pulse for current cell */
+    --called: #ffd54f;       /* called-cell color (per selected) */
+    --bgGlow1: #ff6a00;      /* gradient glow A (per selected) */
+    --bgGlow2: #00e5ff;      /* gradient glow B (per selected) */
+    --bgGlow3: #ffe066;      /* gradient glow C (per selected) */
 
-    /* Brighter, fun background gradient */
-    --bg1: #121321;
-    --bg2: #1a1633;
+    /* Neutral base */
+    --bgDeepTop: #19143a;
+    --bgDeepBottom: #0b0f24;
     --text: #ffffff;
     --subtle: #e9e7fb;
     --shadow: 0 10px 34px rgba(0,0,0,0.45);
   }
 
-  /* Bold, punchy background */
+  /* Bold, punchy background driven by CSS variables */
   html, body {
     margin: 0;
     height: 100%;
     background:
-      radial-gradient(1200px 900px at 15% 10%, #ff6a00 0%, rgba(255,106,0,0.25) 20%, transparent 40%),
-      radial-gradient(1400px 900px at 85% 20%, #00e5ff 0%, rgba(0,229,255,0.18) 20%, transparent 45%),
-      radial-gradient(1100px 600px at 50% 95%, #ffe066 0%, rgba(255,224,102,0.16) 30%, transparent 55%),
-      linear-gradient(180deg, #19143a, #0b0f24);
+      radial-gradient(1200px 900px at 15% 10%, var(--bgGlow1) 0%, color-mix(in oklab, var(--bgGlow1) 25%, transparent) 20%, transparent 40%),
+      radial-gradient(1400px 900px at 85% 20%, var(--bgGlow2) 0%, color-mix(in oklab, var(--bgGlow2) 20%, transparent) 20%, transparent 45%),
+      radial-gradient(1100px 600px at 50% 95%, var(--bgGlow3) 0%, color-mix(in oklab, var(--bgGlow3) 20%, transparent) 30%, transparent 55%),
+      linear-gradient(180deg, var(--bgDeepTop), var(--bgDeepBottom));
     color: var(--text);
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans";
     overflow: hidden;
@@ -80,8 +83,7 @@
   }
 
   .bigNumber {
-    /* Keep fixed-width numerals and prevent wrap */
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums; /* fixed widths for 1/88/90 */
     font-weight: 900;
     line-height: 0.9;
     letter-spacing: -0.02em;
@@ -117,15 +119,11 @@
     justify-content: space-between;
     gap: 12px;
   }
-  .counter {
-    font-weight: 800;
-  }
-  .ver {
-    opacity: .85; font-size: .9rem;
-  }
+  .counter { font-weight: 800; }
+  .ver { opacity: .85; font-size: .9rem; }
 
   .btn {
-    background: var(--bg2);
+    background: #1a1633;
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 18px;
     color: var(--text);
@@ -211,15 +209,21 @@
   .cell.current {
     outline: 2px solid var(--accent);
     box-shadow:
-      0 0 0 5px rgba(0,201,183,0.18),
-      0 0 36px 6px rgba(0,201,183,0.35) inset,
-      0 8px 28px rgba(0,201,183,0.22);
+      0 0 0 5px color-mix(in oklab, var(--accent) 18%, transparent),
+      0 0 36px 6px color-mix(in oklab, var(--accent) 35%, transparent) inset,
+      0 8px 28px color-mix(in oklab, var(--accent) 22%, transparent);
     animation: cellPulse 1200ms ease-in-out infinite;
   }
   @keyframes cellPulse {
-    0% { box-shadow: 0 0 0 5px rgba(0,201,183,0.16), 0 0 18px 2px rgba(0,201,183,0.22) inset; }
-    50% { box-shadow: 0 0 0 7px rgba(0,201,183,0.24), 0 0 40px 8px rgba(0,201,183,0.38) inset; }
-    100% { box-shadow: 0 0 0 5px rgba(0,201,183,0.16), 0 0 18px 2px rgba(0,201,183,0.22) inset; }
+    0% { box-shadow:
+      0 0 0 5px color-mix(in oklab, var(--accent) 16%, transparent),
+      0 0 18px 2px color-mix(in oklab, var(--accent) 22%, transparent) inset; }
+    50% { box-shadow:
+      0 0 0 7px color-mix(in oklab, var(--accent) 24%, transparent),
+      0 0 40px 8px color-mix(in oklab, var(--accent) 38%, transparent) inset; }
+    100% { box-shadow:
+      0 0 0 5px color-mix(in oklab, var(--accent) 16%, transparent),
+      0 0 18px 2px color-mix(in oklab, var(--accent) 22%, transparent) inset; }
   }
 
   .recentPanel {
@@ -236,10 +240,11 @@
     border: 1px solid rgba(255,255,255,0.2);
     text-align: center; font-weight: 900; font-variant-numeric: tabular-nums;
     user-select: none; white-space: nowrap;
+    color: var(--text);
   }
   .chip.newest {
-    background: rgba(0,201,183,0.35);
-    border-color: rgba(0,201,183,0.65);
+    background: color-mix(in oklab, var(--accent) 35%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 65%, transparent);
     color: #061313;
   }
 
@@ -293,6 +298,7 @@
     box-shadow: 0 0 40px rgba(0,0,0,0.45);
     border: 2px solid rgba(255,255,255,0.18);
     text-align: center;
+    color: var(--text);
   }
 
   .modalTitle {
@@ -357,7 +363,7 @@
 
       <div class="panel rowPad counterRow">
         <div class="counter" id="counter">Drawn: 0 / 90</div>
-        <div class="ver">v1.2.0</div>
+        <div class="ver">v1.3.0</div>
       </div>
 
       <div class="panel rowPad resetRow">
@@ -387,7 +393,7 @@
   <div id="resetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
     <div class="modalBox">
       <div id="resetTitle" class="modalTitle">Start new game</div>
-      <div class="modalText">Choose a highlight colour for called numbers:</div>
+      <div class="modalText">Choose a highlight colour for called numbers (also sets the background theme):</div>
 
       <div class="colorGrid">
         <div class="colorBtn" data-color="Yellow" data-hex="#ffd54f" style="background:#ffd54f;">Yellow</div>
@@ -413,8 +419,8 @@
    ********************/
   const NUMBERS = 90, ROWS = 10, COLS = 9, COOLDOWN_MS = 1000;
   const LEFT_FRACTION = 0.40;
-  const STORAGE_KEY = 'bingo_state_v2';     // bumped version to include calledColor
-  const SNAPSHOT_KEY = 'bingo_snapshot_v2';
+  const STORAGE_KEY = 'bingo_state_v3';     // bumped for theme per color
+  const SNAPSHOT_KEY = 'bingo_snapshot_v3';
 
   const els = {
     grid: document.getElementById('grid'),
@@ -445,13 +451,59 @@
   };
 
   /********************
+   * THEME MAP
+   * For each selected color, set:
+   *  - called (cell bg)
+   *  - accent (outline glow)
+   *  - bgGlow1/2/3 (background gradients)
+   ********************/
+  const THEMES = {
+    Yellow: {
+      called: '#ffd54f',
+      accent: '#00c9b7',
+      bgGlow1: '#ffb300', bgGlow2: '#00d1ff', bgGlow3: '#ffe066'
+    },
+    Red: {
+      called: '#ff6a6a',
+      accent: '#00e5ff',
+      bgGlow1: '#ff3b3f', bgGlow2: '#ff9f1c', bgGlow3: '#ffe066'
+    },
+    Blue: {
+      called: '#80d8ff',
+      accent: '#ff9f1c',
+      bgGlow1: '#0091ea', bgGlow2: '#80d8ff', bgGlow3: '#00e5ff'
+    },
+    Brown: {
+      called: '#c49a6c',
+      accent: '#00c9b7',
+      bgGlow1: '#8d6e63', bgGlow2: '#c49a6c', bgGlow3: '#a1887f'
+    },
+    Pink: {
+      called: '#ff99cc',
+      accent: '#a3ff12',
+      bgGlow1: '#ff5fa2', bgGlow2: '#ff99cc', bgGlow3: '#ffc2e2'
+    },
+    Green: {
+      called: '#a5d6a7',
+      accent: '#c44dff',
+      bgGlow1: '#00c853', bgGlow2: '#a5d6a7', bgGlow3: '#66ffa6'
+    }
+  };
+
+  function applyThemeByName(name, calledHex) {
+    const t = THEMES[name] || THEMES['Yellow'];
+    // allow custom hex override for called
+    document.documentElement.style.setProperty('--called', calledHex || t.called);
+    document.documentElement.style.setProperty('--accent', t.accent);
+    document.documentElement.style.setProperty('--bgGlow1', t.bgGlow1);
+    document.documentElement.style.setProperty('--bgGlow2', t.bgGlow2);
+    document.documentElement.style.setProperty('--bgGlow3', t.bgGlow3);
+  }
+
+  /********************
    * UTILITIES
    ********************/
   const nowTs = () => Date.now();
-
-  function setCalledCssVar(hex){
-    document.documentElement.style.setProperty('--called', hex);
-  }
 
   function seededRandom(seed) {
     // Simple mulberry32 PRNG for reproducibility
@@ -499,7 +551,7 @@
         calledColorName: 'Yellow',
         calledColorHex: '#ffd54f'
       }, obj);
-      setCalledCssVar(state.calledColorHex);
+      applyThemeByName(state.calledColorName, state.calledColorHex);
       return true;
     } catch {
       return false;
@@ -509,7 +561,7 @@
   function performResetWithColor(name, hex){
     state.calledColorName = name;
     state.calledColorHex = hex;
-    setCalledCssVar(hex);
+    applyThemeByName(name, hex);
 
     state.seed = Math.floor(Math.random() * 0xFFFFFFFF);
     const rand = seededRandom(state.seed);
@@ -518,7 +570,7 @@
     state.index = -1;
     saveState();
     renderAll();
-    announce(`New game with ${name} highlight. Ready.`);
+    announce(`New ${name} game. Ready.`);
   }
 
   /********************
@@ -560,7 +612,6 @@
 
     const el = els.bigNumber;
     const oldText = el.textContent;
-    const oldFontSize = el.style.fontSize;
 
     el.textContent = sample;
     el.style.fontSize = '100px';
@@ -889,11 +940,11 @@
     window.addEventListener('orientationchange', ()=>{ setTimeout(reflow, 120); });
 
     if (!loadState()) {
-      // First run: open modal to pick a colour, then perform reset
+      // First run: open modal to pick a colour, theme updates after selection
       els.resetModal.classList.remove('hidden');
+      // Apply default theme so background looks good even before first pick
+      applyThemeByName(state.calledColorName, state.calledColorHex);
     } else {
-      // Apply stored called color to CSS var
-      setCalledCssVar(state.calledColorHex);
       reflowAndRender();
     }
 
