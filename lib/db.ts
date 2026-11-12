@@ -3,22 +3,28 @@ import { PGlite } from '@electric-sql/pglite'
 import pg from 'pg'
 
 const databaseUrl = process.env.DATABASE_URL?.trim() ?? ''
-let pool: pg.Pool | undefined
-let local: Promise<PGlite> | undefined
+
+type GlobalDb = typeof globalThis & {
+  __ancrumBingoPgPool?: pg.Pool
+  __ancrumBingoPglite?: Promise<PGlite>
+}
+
+const g = globalThis as GlobalDb
 
 export async function sql<T = Record<string, unknown>>(
   text: string,
   params: unknown[] = [],
 ): Promise<T[]> {
   if (databaseUrl !== '') {
-    pool ??= new pg.Pool({ connectionString: databaseUrl, max: 5 })
-    return (await pool.query(text, params)).rows as T[]
+    g.__ancrumBingoPgPool ??= new pg.Pool({ connectionString: databaseUrl, max: 5 })
+    return (await g.__ancrumBingoPgPool.query(text, params)).rows as T[]
   }
-  local ??= startLocal().catch((error: unknown) => {
-    local = undefined
+  // globalThis so Next.js route bundles share one in-memory DB in dev
+  g.__ancrumBingoPglite ??= startLocal().catch((error: unknown) => {
+    g.__ancrumBingoPglite = undefined
     throw error
   })
-  return (await (await local).query<T>(text, params)).rows
+  return (await (await g.__ancrumBingoPglite).query<T>(text, params)).rows
 }
 
 async function startLocal(): Promise<PGlite> {
