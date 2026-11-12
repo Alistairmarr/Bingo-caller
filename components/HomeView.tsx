@@ -20,9 +20,8 @@ export function HomeView() {
         <p className="brand-mark">Ancrum Fete Bingo</p>
         <h1>On the green · village hall night</h1>
         <p className="lede">
-          On the <strong>Pad</strong>, open Caller — it makes a short room code. On the{' '}
-          <strong>TV or Fire Stick browser</strong>, open Display and type that code. Both stay on the same
-          hosted page, in sync for the fete.
+          On the <strong>Pad</strong>, open Caller — one hall room with a big QR. On the{' '}
+          <strong>TV</strong>, open Display and join. Phones in the hall can scan the QR to follow along.
         </p>
       </header>
 

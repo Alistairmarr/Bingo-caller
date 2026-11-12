@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
+import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
 import { RoomQr } from './RoomQr'
@@ -44,6 +45,7 @@ export function CallerView() {
   const last = lastCalled(state)
   const remaining = remainingCount(state)
   const exhausted = remaining === 0
+  const girty = last === 30
 
   const requestMode = (mode: BingoMode) => {
     if (mode === state.mode) return
@@ -63,11 +65,6 @@ export function CallerView() {
     } catch {
       /* ignore */
     }
-  }
-
-  const startNewRoom = async () => {
-    setHidden(false)
-    await ensureCallerRoom(true)
   }
 
   return (
@@ -102,9 +99,9 @@ export function CallerView() {
         {codeHidden ? (
           <>
             <div>
-              <p className="room-label">Room ready</p>
+              <p className="room-label">Hall room ready</p>
               <p className="room-status">
-                Code &amp; QR hidden · TV can stay linked
+                Code &amp; QR hidden · TV / phones stay linked
                 {roomStatus === 'error' ? ` · ${roomError || 'sync issue'}` : ''}
               </p>
             </div>
@@ -112,25 +109,22 @@ export function CallerView() {
               <button type="button" className="btn btn-secondary" onClick={() => setHidden(false)}>
                 Show code
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => void startNewRoom()}>
-                New room
-              </button>
             </div>
           </>
         ) : (
           <>
             <div className="room-banner-main">
               <div>
-                <p className="room-label">Room code for the TV · scan for phones</p>
+                <p className="room-label">Hall room · TV code · phone QR</p>
                 <p className="room-code">{room ?? '····'}</p>
                 <p className="room-status">
-                  {roomStatus === 'live' && 'Live — Display / phones can join with this code'}
-                  {roomStatus === 'connecting' && 'Starting room…'}
+                  {roomStatus === 'live' && 'One hall room — Display & phones join here'}
+                  {roomStatus === 'connecting' && 'Opening hall room…'}
                   {roomStatus === 'error' && (roomError || 'Room sync issue — local tab sync still works')}
                   {roomStatus === 'idle' && 'Preparing room…'}
                 </p>
               </div>
-              {room ? <RoomQr code={room} size={112} /> : null}
+              {room ? <RoomQr code={room} size={220} className="room-qr-wrap--caller" /> : null}
             </div>
             <div className="room-actions">
               <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>
@@ -138,9 +132,6 @@ export function CallerView() {
               </button>
               <button type="button" className="btn btn-ghost" onClick={() => setHidden(true)} disabled={!room}>
                 Hide code
-              </button>
-              <button type="button" className="btn btn-ghost" onClick={() => void startNewRoom()}>
-                New room
               </button>
             </div>
           </>
@@ -151,9 +142,10 @@ export function CallerView() {
         <p className="caller-kicker">
           {state.mode}-ball · {state.called.length} called
         </p>
-        <p className={`caller-last ${last ? 'caller-last--pop' : ''}`} key={last ?? 'empty'}>
+        <p className={`caller-last ${last ? 'caller-last--pop' : ''} ${girty ? 'caller-last--girty' : ''}`} key={last ?? 'empty'}>
           {last ?? '—'}
         </p>
+        <DirtyGirty active={girty} />
         <p className="caller-sub">
           {exhausted
             ? 'All numbers called'

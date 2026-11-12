@@ -16,7 +16,7 @@ await caller.waitForFunction(() => {
   return el && el.textContent && !el.textContent.includes('·')
 })
 const code = (await caller.locator('.room-code').innerText()).trim()
-if (!/^[A-Z2-9]{4}$/.test(code)) throw new Error(`bad room code: ${code}`)
+if (code !== 'FETE') throw new Error(`expected single hall code FETE, got: ${code}`)
 
 await display.goto(`${base}/display`)
 await display.fill('.join-input', code)

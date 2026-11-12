@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createRoom } from '@/lib/rooms'
+import { getOrCreateHallRoom } from '@/lib/rooms'
 
 export const runtime = 'nodejs'
 
+/** Opens the single Ancrum hall room (get-or-create). */
 export async function POST(request: Request) {
   let body: { state?: unknown } = {}
   try {
@@ -11,8 +12,8 @@ export async function POST(request: Request) {
     body = {}
   }
   try {
-    const created = await createRoom(body.state)
-    return NextResponse.json(created, { status: 201 })
+    const room = await getOrCreateHallRoom(body.state)
+    return NextResponse.json(room, { status: 201 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'create_failed'
     return NextResponse.json({ error: message }, { status: 500 })

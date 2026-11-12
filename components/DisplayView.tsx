@@ -3,19 +3,33 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
+import { RoomQr } from './RoomQr'
 import { normalizeRoomCode } from './game/roomApi'
 import { useBingoStore } from './game/store'
 import { lastCalled } from './game/types'
+
+const QR_HIDDEN_KEY = 'ancrum-fete-bingo-display-qr-hidden'
 
 export function DisplayView() {
   const searchParams = useSearchParams()
   const { state, room, roomStatus, roomError, joinRoom } = useBingoStore({ role: 'display' })
   const [draft, setDraft] = useState('')
+  const [qrHidden, setQrHidden] = useState(false)
   const autoTried = useRef(false)
   const last = lastCalled(state)
   const joined = !!room
+  const girty = last === 30
+
+  useEffect(() => {
+    try {
+      setQrHidden(sessionStorage.getItem(QR_HIDDEN_KEY) === '1')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   useEffect(() => {
     const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
@@ -30,6 +44,15 @@ export function DisplayView() {
     void joinRoom(fromQuery)
   }, [searchParams, joined, joinRoom])
 
+  const setQrHiddenPersist = (hidden: boolean) => {
+    setQrHidden(hidden)
+    try {
+      sessionStorage.setItem(QR_HIDDEN_KEY, hidden ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }
+
   const onJoin = async (e: FormEvent) => {
     e.preventDefault()
     const code = normalizeRoomCode(draft)
@@ -38,7 +61,7 @@ export function DisplayView() {
   }
 
   return (
-    <main className="display">
+    <main className={`display ${qrHidden || !joined ? '' : 'display--with-qr'}`}>
       <div className="display-atmosphere" aria-hidden />
       <header className="display-bar">
         <Link className="brand-quiet" href="/">
@@ -51,23 +74,32 @@ export function DisplayView() {
               <span className="display-mode">{state.mode}-ball</span>
               <span className="display-count">{state.called.length} called</span>
               <span className="display-room">Room {room}</span>
+              {qrHidden ? (
+                <button type="button" className="btn btn-ghost display-qr-toggle" onClick={() => setQrHiddenPersist(false)}>
+                  Show QR
+                </button>
+              ) : (
+                <button type="button" className="btn btn-ghost display-qr-toggle" onClick={() => setQrHiddenPersist(true)}>
+                  Hide QR
+                </button>
+              )}
             </>
           ) : (
-            <span className="display-count">Join a room</span>
+            <span className="display-count">Join hall room</span>
           )}
         </p>
       </header>
 
       {!joined ? (
         <section className="join-panel">
-          <h2>Enter the room code from the Pad</h2>
-          <p>Open Caller on the games-master tablet first — it shows a four-character code or QR.</p>
+          <h2>Enter the hall room code</h2>
+          <p>Open Caller on the games-master tablet first — code is usually <strong>FETE</strong>, or scan the QR.</p>
           <form className="join-form" onSubmit={(e) => void onJoin(e)}>
             <input
               className="join-input"
               value={draft}
               onChange={(e) => setDraft(normalizeRoomCode(e.target.value))}
-              placeholder="e.g. K7MP"
+              placeholder="FETE"
               aria-label="Room code"
               autoCapitalize="characters"
               autoCorrect="off"
@@ -87,15 +119,26 @@ export function DisplayView() {
         </section>
       ) : (
         <>
-          <section className="display-hero" aria-live="polite" aria-atomic="true">
-            <p className="display-label">
-              Last called
-              {roomStatus === 'live' ? ' · live' : roomStatus === 'connecting' ? ' · linking…' : ''}
-            </p>
-            <p className={`display-number ${last ? 'display-number--pop' : ''}`} key={last ?? 'empty'}>
-              {last ?? '—'}
-            </p>
-            {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
+          <section className="display-stage" aria-live="polite" aria-atomic="true">
+            <div className="display-hero">
+              <p className="display-label">
+                Last called
+                {roomStatus === 'live' ? ' · live' : roomStatus === 'connecting' ? ' · linking…' : ''}
+              </p>
+              <p
+                className={`display-number ${last ? 'display-number--pop' : ''} ${girty ? 'display-number--girty' : ''}`}
+                key={last ?? 'empty'}
+              >
+                {last ?? '—'}
+              </p>
+              <DirtyGirty active={girty} />
+              {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
+            </div>
+            {!qrHidden && room ? (
+              <div className="display-qr-panel">
+                <RoomQr code={room} size={480} className="room-qr-wrap--hall" label="Scan to follow along" />
+              </div>
+            ) : null}
           </section>
 
           <section className="display-board-wrap" aria-label="Called numbers board">
