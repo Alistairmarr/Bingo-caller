@@ -1,0 +1,17 @@
+{
+  "name": "Ancrum Fete Bingo",
+  "short_name": "Fete Bingo",
+  "description": "Village hall dual-screen bingo with room-code sync for the Ancrum Fete Committee",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141a14",
+  "theme_color": "#1c2419",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
