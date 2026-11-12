@@ -11,41 +11,32 @@ import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
 import { lastCalled, maxBall, type BingoMode } from './game/types'
 
-const CODE_HIDDEN_KEY = 'ancrum-fete-bingo-code-hidden'
-
 export function CallerView() {
-  const { state, room, roomStatus, roomError, callNext, undo, clear, changeMode, ensureCallerRoom } =
-    useBingoStore({ role: 'caller' })
+  const {
+    state,
+    room,
+    roomStatus,
+    roomError,
+    callNext,
+    undo,
+    clear,
+    changeMode,
+    changeJoinHidden,
+    ensureCallerRoom,
+  } = useBingoStore({ role: 'caller' })
   const [clearOpen, setClearOpen] = useState(false)
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
-  const [codeHidden, setCodeHidden] = useState(false)
 
   useEffect(() => {
     void ensureCallerRoom()
   }, [ensureCallerRoom])
 
-  useEffect(() => {
-    try {
-      setCodeHidden(sessionStorage.getItem(CODE_HIDDEN_KEY) === '1')
-    } catch {
-      /* ignore */
-    }
-  }, [])
-
-  const setHidden = (hidden: boolean) => {
-    setCodeHidden(hidden)
-    try {
-      sessionStorage.setItem(CODE_HIDDEN_KEY, hidden ? '1' : '0')
-    } catch {
-      /* ignore */
-    }
-  }
-
   const last = lastCalled(state)
   const remaining = remainingCount(state)
   const exhausted = remaining === 0
   const girty = last === 30
+  const codeHidden = state.joinHidden
 
   const requestMode = (mode: BingoMode) => {
     if (mode === state.mode) return
@@ -95,7 +86,7 @@ export function CallerView() {
             </button>
           </div>
           {codeHidden ? (
-            <button type="button" className="btn btn-secondary caller-show-code" onClick={() => setHidden(false)}>
+            <button type="button" className="btn btn-secondary caller-show-code" onClick={() => changeJoinHidden(false)}>
               Show code
             </button>
           ) : null}
@@ -121,7 +112,7 @@ export function CallerView() {
             <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>
               {copied ? 'Copied' : 'Copy code'}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => setHidden(true)} disabled={!room}>
+            <button type="button" className="btn btn-ghost" onClick={() => changeJoinHidden(true)} disabled={!room}>
               Hide code
             </button>
           </div>

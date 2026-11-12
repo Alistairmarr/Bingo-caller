@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clearCalled, nextNumber, setMode, undoLast } from './logic'
+import { clearCalled, nextNumber, setJoinHidden, setMode, undoLast } from './logic'
 import { createRoom, fetchRoom, pushRoom } from './roomApi'
 import {
   CHANNEL_NAME,
@@ -22,6 +22,7 @@ function readStored(): BingoState {
     return {
       mode: parsed.mode,
       called: parsed.called.filter((n): n is number => typeof n === 'number'),
+      joinHidden: parsed.joinHidden === true,
       updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
     }
   } catch {
@@ -222,6 +223,13 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     [publish],
   )
 
+  const changeJoinHidden = useCallback(
+    (hidden: boolean) => {
+      void publish(setJoinHidden(stateRef.current, hidden))
+    },
+    [publish],
+  )
+
   return {
     state,
     room,
@@ -231,6 +239,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     undo,
     clear,
     changeMode,
+    changeJoinHidden,
     ensureCallerRoom,
     joinRoom,
     publishLocal,
