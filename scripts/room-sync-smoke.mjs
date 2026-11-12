@@ -10,6 +10,10 @@ const caller = await callerCtx.newPage()
 const display = await displayCtx.newPage()
 
 await caller.goto(`${base}/caller`)
+await caller.waitForSelector('.caller')
+// If a prior test left joinHidden on, reveal the code banner
+const show = caller.locator('.caller-show-code')
+if (await show.count()) await show.click()
 await caller.waitForSelector('.room-code')
 await caller.waitForFunction(() => {
   const el = document.querySelector('.room-code')

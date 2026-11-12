@@ -1,16 +1,26 @@
 import type { BingoState } from './types'
 import { DEFAULT_STATE, isValidRoomCode } from './types'
 
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-
-export function randomRoomCode(): string {
-  const bytes = new Uint32Array(4)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]!).join('')
-}
+export const CALLER_TOKEN_KEY = 'ancrum-fete-bingo-caller-token'
 
 export function normalizeRoomCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4)
+}
+
+export function readCallerToken(): string | null {
+  try {
+    return sessionStorage.getItem(CALLER_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function writeCallerToken(token: string) {
+  try {
+    sessionStorage.setItem(CALLER_TOKEN_KEY, token)
+  } catch {
+    /* ignore */
+  }
 }
 
 async function parseJson(res: Response) {
@@ -21,18 +31,29 @@ async function parseJson(res: Response) {
   }
 }
 
-export async function createRoom(initial?: BingoState): Promise<{ code: string; state: BingoState }> {
+export async function createRoom(
+  initial?: BingoState,
+): Promise<{ code: string; state: BingoState; callerToken: string }> {
   const state = initial ?? { ...DEFAULT_STATE, updatedAt: Date.now() }
+  const existingToken = readCallerToken()
   const res = await fetch('/api/rooms', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ state }),
+    headers: {
+      'Content-Type': 'application/json',
+      ...(existingToken ? { 'X-Caller-Token': existingToken } : {}),
+    },
+    body: JSON.stringify({ state, callerToken: existingToken ?? undefined }),
   })
   const data = await parseJson(res)
-  if (!res.ok || !data?.code) {
+  if (!res.ok || !data?.code || !data?.callerToken) {
     throw new Error(data?.error || 'Could not create room')
   }
-  return { code: data.code as string, state: data.state as BingoState }
+  writeCallerToken(data.callerToken as string)
+  return {
+    code: data.code as string,
+    state: data.state as BingoState,
+    callerToken: data.callerToken as string,
+  }
 }
 
 export async function fetchRoom(code: string): Promise<BingoState | null> {
@@ -48,12 +69,18 @@ export async function fetchRoom(code: string): Promise<BingoState | null> {
 export async function pushRoom(code: string, state: BingoState): Promise<BingoState> {
   const normalized = normalizeRoomCode(code)
   if (!isValidRoomCode(normalized)) throw new Error('Invalid room code')
+  const token = readCallerToken()
+  if (!token) throw new Error('Caller token missing — reopen Caller')
   const res = await fetch(`/api/rooms/${normalized}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ state }),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Caller-Token': token,
+    },
+    body: JSON.stringify({ state, callerToken: token }),
   })
   const data = await parseJson(res)
+  if (res.status === 401) throw new Error('Caller control lost — reopen Caller on the Pad')
   if (!res.ok || !data?.state) throw new Error(data?.error || 'Could not update room')
   return data.state as BingoState
 }

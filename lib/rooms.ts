@@ -1,3 +1,4 @@
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { sql } from '@/lib/db'
 
 /** Single hall room for Ancrum Fete — no multi-room create. */
@@ -16,7 +17,8 @@ export function isValidCode(code: string): boolean {
   return typeof code === 'string' && /^[A-Z2-9]{4}$/.test(code)
 }
 
-export function normalizeState(raw: unknown): BingoState | null {
+/** Parse client game fields; never trust client updatedAt. */
+export function normalizeState(raw: unknown): Omit<BingoState, 'updatedAt'> | null {
   if (!raw || typeof raw !== 'object') return null
   const obj = raw as Record<string, unknown>
   const mode = obj.mode === 75 || obj.mode === 90 ? obj.mode : 90
@@ -26,8 +28,19 @@ export function normalizeState(raw: unknown): BingoState | null {
         .slice(0, mode)
     : []
   const joinHidden = obj.joinHidden === true
-  const updatedAt = typeof obj.updatedAt === 'number' && Number.isFinite(obj.updatedAt) ? obj.updatedAt : Date.now()
-  return { mode, called, joinHidden, updatedAt }
+  return { mode, called, joinHidden }
+}
+
+function mintCallerToken(): string {
+  return randomBytes(24).toString('base64url')
+}
+
+function tokensMatch(expected: string | null | undefined, provided: string | null): boolean {
+  if (!expected || !provided) return false
+  const a = Buffer.from(expected)
+  const b = Buffer.from(provided)
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
 }
 
 type RoomRow = {
@@ -35,6 +48,7 @@ type RoomRow = {
   mode: number
   called: unknown
   join_hidden?: boolean | null
+  caller_token?: string | null
   updated_at: number | string
 }
 
@@ -62,47 +76,59 @@ function rowToState(row: RoomRow): BingoState {
   }
 }
 
-/** Get the one hall room, creating FETE if needed. Ignores client-proposed codes. */
-export async function getOrCreateHallRoom(state: unknown): Promise<{ code: string; state: BingoState }> {
-  const existingRows = await sql<RoomRow>(
-    `select code, mode, called, join_hidden, updated_at from rooms where code = $1`,
+async function loadHallRow(): Promise<RoomRow | null> {
+  const rows = await sql<RoomRow>(
+    `select code, mode, called, join_hidden, caller_token, updated_at from rooms where code = $1`,
     [HALL_ROOM_CODE],
   )
-  if (existingRows[0]) {
-    return { code: HALL_ROOM_CODE, state: rowToState(existingRows[0]) }
-  }
-
-  const next = normalizeState(state) || {
-    mode: 90 as BingoMode,
-    called: [],
-    joinHidden: false,
-    updatedAt: Date.now(),
-  }
-  try {
-    await sql(
-      `insert into rooms (code, mode, called, join_hidden, updated_at) values ($1, $2, $3::jsonb, $4, $5)`,
-      [HALL_ROOM_CODE, next.mode, JSON.stringify(next.called), next.joinHidden, next.updatedAt],
-    )
-    return { code: HALL_ROOM_CODE, state: next }
-  } catch {
-    const again = await sql<RoomRow>(
-      `select code, mode, called, join_hidden, updated_at from rooms where code = $1`,
-      [HALL_ROOM_CODE],
-    )
-    if (again[0]) return { code: HALL_ROOM_CODE, state: rowToState(again[0]) }
-    throw new Error('Could not open hall room')
-  }
+  return rows[0] ?? null
 }
 
-/** @deprecated use getOrCreateHallRoom — kept name for API route clarity */
-export async function createRoom(state: unknown): Promise<{ code: string; state: BingoState }> {
-  return getOrCreateHallRoom(state)
+/**
+ * Get-or-create the hall room and return a caller token.
+ * Valid existing token is reused; otherwise a new token is minted (Caller reclaim).
+ */
+export async function getOrCreateHallRoom(
+  state: unknown,
+  presentedToken: string | null,
+): Promise<{ code: string; state: BingoState; callerToken: string }> {
+  const existing = await loadHallRow()
+  if (existing) {
+    const game = rowToState(existing)
+    if (tokensMatch(existing.caller_token, presentedToken)) {
+      return { code: HALL_ROOM_CODE, state: game, callerToken: existing.caller_token! }
+    }
+    const callerToken = mintCallerToken()
+    await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerToken])
+    return { code: HALL_ROOM_CODE, state: game, callerToken }
+  }
+
+  const fields = normalizeState(state) || { mode: 90 as BingoMode, called: [], joinHidden: false }
+  const updatedAt = Date.now()
+  const callerToken = mintCallerToken()
+  try {
+    await sql(
+      `insert into rooms (code, mode, called, join_hidden, caller_token, updated_at) values ($1, $2, $3::jsonb, $4, $5, $6)`,
+      [HALL_ROOM_CODE, fields.mode, JSON.stringify(fields.called), fields.joinHidden, callerToken, updatedAt],
+    )
+    return {
+      code: HALL_ROOM_CODE,
+      state: { ...fields, updatedAt },
+      callerToken,
+    }
+  } catch {
+    const again = await loadHallRow()
+    if (!again) throw new Error('Could not open hall room')
+    const callerTokenRetry = mintCallerToken()
+    await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerTokenRetry])
+    return { code: HALL_ROOM_CODE, state: rowToState(again), callerToken: callerTokenRetry }
+  }
 }
 
 export async function getRoom(code: string): Promise<BingoState | null> {
   if (!isValidCode(code)) return null
   const rows = await sql<RoomRow>(
-    `select code, mode, called, join_hidden, updated_at from rooms where code = $1`,
+    `select code, mode, called, join_hidden, caller_token, updated_at from rooms where code = $1`,
     [code],
   )
   if (!rows[0]) return null
@@ -112,37 +138,33 @@ export async function getRoom(code: string): Promise<BingoState | null> {
 export async function putRoom(
   code: string,
   state: unknown,
-): Promise<{ state: BingoState; stale?: boolean; error?: string; status?: number }> {
+  callerToken: string | null,
+): Promise<{ state: BingoState; error?: string; status?: number }> {
   if (!isValidCode(code)) {
     return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'invalid_code', status: 400 }
   }
-  const next = normalizeState(state)
-  if (!next) {
+  const fields = normalizeState(state)
+  if (!fields) {
     return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'invalid_state', status: 400 }
   }
+  if (code !== HALL_ROOM_CODE) {
+    return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'not_found', status: 404 }
+  }
 
-  const existing = await getRoom(code)
+  const existing = await loadHallRow()
   if (!existing) {
-    if (code !== HALL_ROOM_CODE) {
-      return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'not_found', status: 404 }
-    }
-    await sql(
-      `insert into rooms (code, mode, called, join_hidden, updated_at) values ($1, $2, $3::jsonb, $4, $5)`,
-      [code, next.mode, JSON.stringify(next.called), next.joinHidden, next.updatedAt],
-    )
-    return { state: next }
+    return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'not_found', status: 404 }
+  }
+  if (!tokensMatch(existing.caller_token, callerToken)) {
+    return { state: rowToState(existing), error: 'unauthorized', status: 401 }
   }
 
-  if (next.updatedAt < existing.updatedAt) {
-    return { state: existing, stale: true }
-  }
-
-  await sql(`update rooms set mode = $2, called = $3::jsonb, join_hidden = $4, updated_at = $5 where code = $1`, [
-    code,
-    next.mode,
-    JSON.stringify(next.called),
-    next.joinHidden,
-    next.updatedAt,
-  ])
+  // Server clock only — client updatedAt is ignored so inflated timestamps cannot freeze the room.
+  const updatedAt = Date.now()
+  const next: BingoState = { ...fields, updatedAt }
+  await sql(
+    `update rooms set mode = $2, called = $3::jsonb, join_hidden = $4, updated_at = $5 where code = $1`,
+    [code, next.mode, JSON.stringify(next.called), next.joinHidden, next.updatedAt],
+  )
   return { state: next }
 }
