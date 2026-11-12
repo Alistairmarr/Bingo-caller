@@ -149,29 +149,11 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     }
   }, [role, room])
 
-  const ensureCallerRoom = useCallback(async (forceNew = false) => {
-    if (roomRef.current && !forceNew) return roomRef.current
-    if (!forceNew) {
-      try {
-        const existing = sessionStorage.getItem(ROOM_STORAGE_KEY)
-        if (existing) {
-          const remote = await fetchRoom(existing)
-          if (remote) {
-            setRoom(existing)
-            roomRef.current = existing
-            setState(remote)
-            writeStored(remote)
-            setRoomStatus('live')
-            setRoomError(null)
-            return existing
-          }
-        }
-      } catch {
-        /* create fresh below */
-      }
-    }
+  const ensureCallerRoom = useCallback(async () => {
+    if (roomRef.current) return roomRef.current
     setRoomStatus('connecting')
     try {
+      // Single hall room (server returns FETE / existing)
       const created = await createRoom(stateRef.current)
       setRoom(created.code)
       roomRef.current = created.code
@@ -182,12 +164,13 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
         /* ignore */
       }
       setState(created.state)
+      writeStored(created.state)
       setRoomStatus('live')
       setRoomError(null)
       return created.code
     } catch (err) {
       setRoomStatus('error')
-      setRoomError(err instanceof Error ? err.message : 'Could not create room')
+      setRoomError(err instanceof Error ? err.message : 'Could not open hall room')
       return null
     }
   }, [])

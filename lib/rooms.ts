@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+/** Single hall room for Ancrum Fete — no multi-room create. */
+export const HALL_ROOM_CODE = 'FETE'
 
 export type BingoMode = 75 | 90
 
@@ -12,14 +13,6 @@ export interface BingoState {
 
 export function isValidCode(code: string): boolean {
   return typeof code === 'string' && /^[A-Z2-9]{4}$/.test(code)
-}
-
-function randomCode(): string {
-  let code = ''
-  for (let i = 0; i < 4; i++) {
-    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]!
-  }
-  return code
 }
 
 export function normalizeState(raw: unknown): BingoState | null {
@@ -65,21 +58,38 @@ function rowToState(row: RoomRow): BingoState {
   }
 }
 
-export async function createRoom(state: unknown): Promise<{ code: string; state: BingoState }> {
-  const next = normalizeState(state) || { mode: 90 as BingoMode, called: [], updatedAt: Date.now() }
-  for (let i = 0; i < 24; i++) {
-    const code = randomCode()
-    try {
-      await sql(
-        `insert into rooms (code, mode, called, updated_at) values ($1, $2, $3::jsonb, $4)`,
-        [code, next.mode, JSON.stringify(next.called), next.updatedAt],
-      )
-      return { code, state: next }
-    } catch {
-      /* collision — retry */
-    }
+/** Get the one hall room, creating FETE if needed. Ignores client-proposed codes. */
+export async function getOrCreateHallRoom(state: unknown): Promise<{ code: string; state: BingoState }> {
+  const existingRows = await sql<RoomRow>(
+    `select code, mode, called, updated_at from rooms where code = $1`,
+    [HALL_ROOM_CODE],
+  )
+  if (existingRows[0]) {
+    return { code: HALL_ROOM_CODE, state: rowToState(existingRows[0]) }
   }
-  throw new Error('Could not allocate room code')
+
+  const next = normalizeState(state) || { mode: 90 as BingoMode, called: [], updatedAt: Date.now() }
+  try {
+    await sql(`insert into rooms (code, mode, called, updated_at) values ($1, $2, $3::jsonb, $4)`, [
+      HALL_ROOM_CODE,
+      next.mode,
+      JSON.stringify(next.called),
+      next.updatedAt,
+    ])
+    return { code: HALL_ROOM_CODE, state: next }
+  } catch {
+    const again = await sql<RoomRow>(
+      `select code, mode, called, updated_at from rooms where code = $1`,
+      [HALL_ROOM_CODE],
+    )
+    if (again[0]) return { code: HALL_ROOM_CODE, state: rowToState(again[0]) }
+    throw new Error('Could not open hall room')
+  }
+}
+
+/** @deprecated use getOrCreateHallRoom — kept name for API route clarity */
+export async function createRoom(state: unknown): Promise<{ code: string; state: BingoState }> {
+  return getOrCreateHallRoom(state)
 }
 
 export async function getRoom(code: string): Promise<BingoState | null> {
@@ -102,6 +112,9 @@ export async function putRoom(
 
   const existing = await getRoom(code)
   if (!existing) {
+    if (code !== HALL_ROOM_CODE) {
+      return { state: { mode: 90, called: [], updatedAt: 0 }, error: 'not_found', status: 404 }
+    }
     await sql(`insert into rooms (code, mode, called, updated_at) values ($1, $2, $3::jsonb, $4)`, [
       code,
       next.mode,
