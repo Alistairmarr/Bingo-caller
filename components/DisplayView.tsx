@@ -131,7 +131,6 @@ export function DisplayView() {
               >
                 {last ?? '—'}
               </p>
-              <DirtyGirty active={girty} />
               {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
             </div>
             {!qrHidden && room ? (
@@ -146,6 +145,8 @@ export function DisplayView() {
               <NumberBoard mode={state.mode} called={state.called} highlight={last} />
             </div>
           </section>
+
+          <DirtyGirty trigger={girty} />
         </>
       )}
     </main>

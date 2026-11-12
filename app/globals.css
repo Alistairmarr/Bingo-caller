@@ -290,10 +290,26 @@ strong {
 }
 
 .btn-next {
-  background: linear-gradient(180deg, var(--lamp-soft), var(--lamp));
+  background: linear-gradient(180deg, #fff1b0, var(--lamp), #f0b020);
   color: var(--hot-ink);
-  font-size: 1.22rem;
-  border: 1px solid #b8924a;
+  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+  font-weight: 800;
+  border: 2px solid #ffe08a;
+  box-shadow: 0 8px 0 #b88220, 0 14px 28px rgba(0, 0, 0, 0.35);
+  min-height: 72px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.btn-next:not(:disabled):hover,
+.btn-next:not(:disabled):focus-visible {
+  filter: brightness(1.06);
+  outline: none;
+}
+
+.btn-next:not(:disabled):active {
+  transform: translateY(3px);
+  box-shadow: 0 4px 0 #b88220, 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary {
@@ -319,21 +335,40 @@ strong {
 }
 
 .caller {
+  height: 100dvh;
   min-height: 100dvh;
+  max-height: 100dvh;
   display: grid;
-  grid-template-rows: auto auto auto auto 1fr;
-  gap: 0.85rem;
-  padding: 1rem 1rem 1.5rem;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  gap: 0.65rem;
+  padding: 0.75rem 1rem 0.9rem;
   max-width: 1100px;
   margin-inline: auto;
+  overflow: hidden;
+}
+
+.caller--code-hidden {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
 .caller-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.caller-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.caller-show-code {
+  min-height: 44px;
+  padding: 0.45rem 0.9rem;
 }
 
 .back-link,
@@ -529,18 +564,20 @@ strong {
 .caller-controls {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 @media (min-width: 640px) {
   .caller-controls {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: 2.4fr 1fr 1fr;
+    align-items: stretch;
   }
 }
 
 .caller-board-wrap {
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
 }
 
 .board-frame {
@@ -551,11 +588,32 @@ strong {
   background: linear-gradient(180deg, rgba(42, 52, 40, 0.96), rgba(22, 28, 20, 0.99));
   box-shadow: inset 0 0 0 2px var(--sandstone-deep), var(--shadow);
   height: 100%;
+  width: 100%;
   min-height: 0;
+  overflow: hidden;
+  display: flex;
 }
 
 .board-frame--compact {
-  padding: 0.55rem;
+  padding: 0.45rem;
+}
+
+.caller .number-board {
+  height: 100%;
+  width: 100%;
+  grid-template-rows: repeat(var(--board-rows), minmax(0, 1fr));
+  align-content: stretch;
+  justify-items: center;
+  align-items: center;
+  gap: clamp(0.15rem, 0.45vh, 0.35rem);
+}
+
+.caller .ball {
+  aspect-ratio: 1;
+  width: min(100%, 6.5vh);
+  height: auto;
+  max-height: 100%;
+  font-size: clamp(0.55rem, 1.5vh, 1.05rem);
 }
 
 .display {
@@ -618,6 +676,7 @@ strong {
   gap: 0.75rem;
   align-items: center;
   min-height: 0;
+  overflow: hidden;
 }
 
 .display--with-qr .display-stage {
@@ -674,38 +733,103 @@ strong {
   animation: girty-glow 0.7s ease-out;
 }
 
-.girty {
-  margin: 0.35rem auto 0;
-  max-width: 36rem;
-  padding: 0.55rem 1rem;
-  border-radius: 999px;
-  border: 2px solid var(--sandstone);
-  background: linear-gradient(90deg, rgba(255, 92, 74, 0.92), rgba(255, 176, 122, 0.95), rgba(255, 212, 90, 0.92));
+.girty-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(8, 14, 10, 0.55);
+  backdrop-filter: blur(2px);
+  animation: girty-fade 0.25s ease-out;
+  pointer-events: none;
+}
+
+.girty-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 34rem);
+  text-align: center;
+  padding: 1.4rem 1.5rem 1.25rem;
+  border-radius: 22px;
+  border: 3px solid #ffe08a;
+  background: linear-gradient(145deg, #ff6b5a 0%, #ffb07a 45%, #ffd45a 100%);
   color: #2a1208;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
   animation: girty-pop 0.55s cubic-bezier(0.2, 1.35, 0.4, 1);
 }
 
 .girty-kicker {
   margin: 0;
-  font-size: clamp(0.7rem, 1.4vw, 0.95rem);
+  font-size: clamp(0.75rem, 1.6vw, 1rem);
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .girty-line {
-  margin: 0.1rem 0 0;
+  margin: 0.35rem 0 0;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(1.15rem, 3.2vw, 2rem);
+  font-size: clamp(1.55rem, 5vw, 2.6rem);
   line-height: 1.05;
+}
+
+.girty-sub {
+  margin: 0.55rem 0 0;
+  font-weight: 700;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  opacity: 0.9;
+}
+
+.girty-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.girty-piece {
+  position: absolute;
+  top: -12%;
+  left: var(--x);
+  width: 0.7rem;
+  height: 1.15rem;
+  border-radius: 2px;
+  background: hsl(var(--hue) 90% 58%);
+  opacity: 0.95;
+  animation: girty-fall var(--dur) linear var(--delay) both;
+  transform: rotate(var(--rot));
+}
+
+.girty-piece:nth-child(3n) {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+}
+
+.girty-piece:nth-child(4n) {
+  width: 0.9rem;
+  height: 0.35rem;
+}
+
+@keyframes girty-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes girty-pop {
   0% {
-    transform: scale(0.7) rotate(-2deg);
+    transform: scale(0.55) rotate(-6deg);
     opacity: 0;
+  }
+  70% {
+    transform: scale(1.06) rotate(1.5deg);
   }
   100% {
     transform: scale(1) rotate(0);
@@ -724,6 +848,17 @@ strong {
   }
 }
 
+@keyframes girty-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(var(--rot));
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(18px, 115vh, 0) rotate(calc(var(--rot) + 420deg));
+    opacity: 0.15;
+  }
+}
+
 .display-board-wrap {
   min-height: 0;
   display: flex;
@@ -738,18 +873,24 @@ strong {
 .display .number-board {
   height: 100%;
   width: 100%;
+  min-height: 0;
   grid-template-rows: repeat(var(--board-rows), minmax(0, 1fr));
-  align-content: center;
+  align-content: stretch;
   justify-items: center;
   align-items: center;
-  gap: clamp(0.18rem, 0.5vh, 0.4rem);
+  gap: clamp(0.12rem, 0.4vh, 0.35rem);
 }
 
 .display .ball {
   aspect-ratio: 1;
-  width: min(100%, 7.2vh);
+  width: min(100%, 100%);
   height: auto;
-  font-size: clamp(0.7rem, 2vh, 1.35rem);
+  max-height: 100%;
+  font-size: clamp(0.55rem, 1.8vh, 1.25rem);
+}
+
+.display--with-qr .display-number {
+  font-size: clamp(5.5rem, 26vh, 14rem);
 }
 
 .join-panel {

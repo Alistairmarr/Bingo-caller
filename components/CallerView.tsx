@@ -68,7 +68,7 @@ export function CallerView() {
   }
 
   return (
-    <main className="caller">
+    <main className={`caller ${codeHidden ? 'caller--code-hidden' : ''}`}>
       <header className="caller-top">
         <div>
           <Link className="back-link" href="/">
@@ -77,66 +77,56 @@ export function CallerView() {
           </Link>
           <h1 className="sr-only">Caller</h1>
         </div>
-        <div className="mode-switch" role="group" aria-label="Game mode">
-          <button
-            type="button"
-            className={state.mode === 90 ? 'mode-btn mode-btn--active' : 'mode-btn'}
-            onClick={() => requestMode(90)}
-          >
-            90-ball
-          </button>
-          <button
-            type="button"
-            className={state.mode === 75 ? 'mode-btn mode-btn--active' : 'mode-btn'}
-            onClick={() => requestMode(75)}
-          >
-            75-ball
-          </button>
+        <div className="caller-top-actions">
+          <div className="mode-switch" role="group" aria-label="Game mode">
+            <button
+              type="button"
+              className={state.mode === 90 ? 'mode-btn mode-btn--active' : 'mode-btn'}
+              onClick={() => requestMode(90)}
+            >
+              90-ball
+            </button>
+            <button
+              type="button"
+              className={state.mode === 75 ? 'mode-btn mode-btn--active' : 'mode-btn'}
+              onClick={() => requestMode(75)}
+            >
+              75-ball
+            </button>
+          </div>
+          {codeHidden ? (
+            <button type="button" className="btn btn-secondary caller-show-code" onClick={() => setHidden(false)}>
+              Show code
+            </button>
+          ) : null}
         </div>
       </header>
 
-      <section className={`room-banner ${codeHidden ? 'room-banner--compact' : ''}`} aria-live="polite">
-        {codeHidden ? (
-          <>
+      {!codeHidden ? (
+        <section className="room-banner" aria-live="polite">
+          <div className="room-banner-main">
             <div>
-              <p className="room-label">Hall room ready</p>
+              <p className="room-label">Hall room · TV code · phone QR</p>
+              <p className="room-code">{room ?? '····'}</p>
               <p className="room-status">
-                Code &amp; QR hidden · TV / phones stay linked
-                {roomStatus === 'error' ? ` · ${roomError || 'sync issue'}` : ''}
+                {roomStatus === 'live' && 'One hall room — Display & phones join here'}
+                {roomStatus === 'connecting' && 'Opening hall room…'}
+                {roomStatus === 'error' && (roomError || 'Room sync issue — local tab sync still works')}
+                {roomStatus === 'idle' && 'Preparing room…'}
               </p>
             </div>
-            <div className="room-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setHidden(false)}>
-                Show code
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="room-banner-main">
-              <div>
-                <p className="room-label">Hall room · TV code · phone QR</p>
-                <p className="room-code">{room ?? '····'}</p>
-                <p className="room-status">
-                  {roomStatus === 'live' && 'One hall room — Display & phones join here'}
-                  {roomStatus === 'connecting' && 'Opening hall room…'}
-                  {roomStatus === 'error' && (roomError || 'Room sync issue — local tab sync still works')}
-                  {roomStatus === 'idle' && 'Preparing room…'}
-                </p>
-              </div>
-              {room ? <RoomQr code={room} size={220} className="room-qr-wrap--caller" /> : null}
-            </div>
-            <div className="room-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>
-                {copied ? 'Copied' : 'Copy code'}
-              </button>
-              <button type="button" className="btn btn-ghost" onClick={() => setHidden(true)} disabled={!room}>
-                Hide code
-              </button>
-            </div>
-          </>
-        )}
-      </section>
+            {room ? <RoomQr code={room} size={220} className="room-qr-wrap--caller" /> : null}
+          </div>
+          <div className="room-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>
+              {copied ? 'Copied' : 'Copy code'}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setHidden(true)} disabled={!room}>
+              Hide code
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="caller-hero" aria-live="polite">
         <p className="caller-kicker">
@@ -145,7 +135,6 @@ export function CallerView() {
         <p className={`caller-last ${last ? 'caller-last--pop' : ''} ${girty ? 'caller-last--girty' : ''}`} key={last ?? 'empty'}>
           {last ?? '—'}
         </p>
-        <DirtyGirty active={girty} />
         <p className="caller-sub">
           {exhausted
             ? 'All numbers called'
@@ -177,6 +166,8 @@ export function CallerView() {
           <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
         </div>
       </section>
+
+      <DirtyGirty trigger={girty} />
 
       <ConfirmDialog
         open={clearOpen}
