@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
 import { normalizeRoomCode } from './game/roomApi'
@@ -9,10 +10,25 @@ import { useBingoStore } from './game/store'
 import { lastCalled } from './game/types'
 
 export function DisplayView() {
+  const searchParams = useSearchParams()
   const { state, room, roomStatus, roomError, joinRoom } = useBingoStore({ role: 'display' })
   const [draft, setDraft] = useState('')
+  const autoTried = useRef(false)
   const last = lastCalled(state)
   const joined = !!room
+
+  useEffect(() => {
+    const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
+    if (fromQuery.length === 4) setDraft(fromQuery)
+  }, [searchParams])
+
+  useEffect(() => {
+    if (autoTried.current || joined) return
+    const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
+    if (fromQuery.length !== 4) return
+    autoTried.current = true
+    void joinRoom(fromQuery)
+  }, [searchParams, joined, joinRoom])
 
   const onJoin = async (e: FormEvent) => {
     e.preventDefault()
@@ -45,7 +61,7 @@ export function DisplayView() {
       {!joined ? (
         <section className="join-panel">
           <h2>Enter the room code from the Pad</h2>
-          <p>Open Caller on the games-master tablet first — it shows a four-character code.</p>
+          <p>Open Caller on the games-master tablet first — it shows a four-character code or QR.</p>
           <form className="join-form" onSubmit={(e) => void onJoin(e)}>
             <input
               className="join-input"
@@ -63,6 +79,7 @@ export function DisplayView() {
               Join display
             </button>
           </form>
+          {roomStatus === 'connecting' && <p className="join-hint">Joining room…</p>}
           {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
           <p className="join-hint">
             Same browser demo: open Caller in another tab — local sync still works without joining.

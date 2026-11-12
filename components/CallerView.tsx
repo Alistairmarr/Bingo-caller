@@ -5,9 +5,12 @@ import { useEffect, useState } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
+import { RoomQr } from './RoomQr'
 import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
 import { lastCalled, maxBall, type BingoMode } from './game/types'
+
+const CODE_HIDDEN_KEY = 'ancrum-fete-bingo-code-hidden'
 
 export function CallerView() {
   const { state, room, roomStatus, roomError, callNext, undo, clear, changeMode, ensureCallerRoom } =
@@ -15,10 +18,28 @@ export function CallerView() {
   const [clearOpen, setClearOpen] = useState(false)
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
+  const [codeHidden, setCodeHidden] = useState(false)
 
   useEffect(() => {
     void ensureCallerRoom()
   }, [ensureCallerRoom])
+
+  useEffect(() => {
+    try {
+      setCodeHidden(sessionStorage.getItem(CODE_HIDDEN_KEY) === '1')
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const setHidden = (hidden: boolean) => {
+    setCodeHidden(hidden)
+    try {
+      sessionStorage.setItem(CODE_HIDDEN_KEY, hidden ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }
 
   const last = lastCalled(state)
   const remaining = remainingCount(state)
@@ -42,6 +63,11 @@ export function CallerView() {
     } catch {
       /* ignore */
     }
+  }
+
+  const startNewRoom = async () => {
+    setHidden(false)
+    await ensureCallerRoom(true)
   }
 
   return (
@@ -72,25 +98,53 @@ export function CallerView() {
         </div>
       </header>
 
-      <section className="room-banner" aria-live="polite">
-        <div>
-          <p className="room-label">Room code for the TV</p>
-          <p className="room-code">{room ?? '····'}</p>
-          <p className="room-status">
-            {roomStatus === 'live' && 'Live — Display can join with this code'}
-            {roomStatus === 'connecting' && 'Starting room…'}
-            {roomStatus === 'error' && (roomError || 'Room sync issue — local tab sync still works')}
-            {roomStatus === 'idle' && 'Preparing room…'}
-          </p>
-        </div>
-        <div className="room-actions">
-          <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>
-            {copied ? 'Copied' : 'Copy code'}
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => void ensureCallerRoom(true)}>
-            New room
-          </button>
-        </div>
+      <section className={`room-banner ${codeHidden ? 'room-banner--compact' : ''}`} aria-live="polite">
+        {codeHidden ? (
+          <>
+            <div>
+              <p className="room-label">Room ready</p>
+              <p className="room-status">
+                Code &amp; QR hidden · TV can stay linked
+                {roomStatus === 'error' ? ` · ${roomError || 'sync issue'}` : ''}
+              </p>
+            </div>
+            <div className="room-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setHidden(false)}>
+                Show code
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => void startNewRoom()}>
+                New room
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="room-banner-main">
+              <div>
+                <p className="room-label">Room code for the TV · scan for phones</p>
+                <p className="room-code">{room ?? '····'}</p>
+                <p className="room-status">
+                  {roomStatus === 'live' && 'Live — Display / phones can join with this code'}
+                  {roomStatus === 'connecting' && 'Starting room…'}
+                  {roomStatus === 'error' && (roomError || 'Room sync issue — local tab sync still works')}
+                  {roomStatus === 'idle' && 'Preparing room…'}
+                </p>
+              </div>
+              {room ? <RoomQr code={room} size={112} /> : null}
+            </div>
+            <div className="room-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>
+                {copied ? 'Copied' : 'Copy code'}
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setHidden(true)} disabled={!room}>
+                Hide code
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => void startNewRoom()}>
+                New room
+              </button>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="caller-hero" aria-live="polite">
