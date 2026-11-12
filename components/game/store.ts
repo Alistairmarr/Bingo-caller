@@ -74,7 +74,9 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
       const code = roomRef.current
       if (code && role === 'caller') {
         try {
-          await pushRoom(code, next)
+          const confirmed = await pushRoom(code, next)
+          setState(confirmed)
+          writeStored(confirmed)
           setRoomStatus('live')
           setRoomError(null)
         } catch (err) {
@@ -164,6 +166,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
       } catch {
         /* ignore */
       }
+      // Prefer server state (server-stamped updatedAt); keep local joinHidden if server older UI race
       setState(created.state)
       writeStored(created.state)
       setRoomStatus('live')
