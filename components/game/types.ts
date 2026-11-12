@@ -3,6 +3,8 @@ export type BingoMode = 75 | 90
 export interface BingoState {
   mode: BingoMode
   called: number[]
+  /** When true, Caller hides code/QR and all Displays hide the hall QR. */
+  joinHidden: boolean
   updatedAt: number
 }
 
@@ -13,6 +15,7 @@ export const ROOM_STORAGE_KEY = 'ancrum-fete-bingo-room'
 export const DEFAULT_STATE: BingoState = {
   mode: 90,
   called: [],
+  joinHidden: false,
   updatedAt: 0,
 }
 

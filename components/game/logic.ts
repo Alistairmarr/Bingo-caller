@@ -46,8 +46,18 @@ export function clearCalled(state: BingoState): BingoState {
 export function setMode(state: BingoState, mode: BingoMode): BingoState {
   if (state.mode === mode) return state
   return {
+    ...state,
     mode,
     called: [],
+    updatedAt: Date.now(),
+  }
+}
+
+export function setJoinHidden(state: BingoState, joinHidden: boolean): BingoState {
+  if (state.joinHidden === joinHidden) return state
+  return {
+    ...state,
+    joinHidden,
     updatedAt: Date.now(),
   }
 }
