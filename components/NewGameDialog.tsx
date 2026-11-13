@@ -35,7 +35,7 @@ export function NewGameDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="new-game-title">New game</h2>
-        <p>Clears the board and sets the hall colour for this game.</p>
+        <p>Clears the board, sets the hall colour, and shows the TV QR so players can prepare.</p>
         <div className="theme-swatches" role="group" aria-label="Game colour">
           {THEME_COLORS.map((color) => (
             <button

@@ -8,6 +8,7 @@ import { MarketCrossMark } from './Emblems'
 import { HallAlertBanner } from './HallAlert'
 import { NumberBoard } from './NumberBoard'
 import { RecentCalls } from './RecentCalls'
+import { THEME_LABELS } from './game/themes'
 import { normalizeRoomCode } from './game/roomApi'
 import { useBingoStore } from './game/store'
 import { lastCalled } from './game/types'
@@ -20,6 +21,7 @@ export function MobileView() {
   const last = lastCalled(state)
   const joined = !!room
   const girty = last === 30
+  const prepNextGame = joined && state.called.length === 0
 
   useEffect(() => {
     const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
@@ -82,6 +84,15 @@ export function MobileView() {
             </button>
           </form>
           {roomStatus === 'connecting' && <p className="join-hint">Joining…</p>}
+          {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
+        </section>
+      ) : prepNextGame ? (
+        <section className="mobile-prep" aria-live="polite">
+          <p className="mobile-prep-kicker">Next game</p>
+          <p className={`mobile-prep-colour mobile-prep-colour--${state.themeColor}`}>
+            {THEME_LABELS[state.themeColor]}
+          </p>
+          <p className="mobile-prep-hint">Get your card ready — waiting for the first number.</p>
           {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
         </section>
       ) : (

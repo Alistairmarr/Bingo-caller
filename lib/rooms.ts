@@ -14,7 +14,7 @@ export interface HallAlert {
   id: number
 }
 
-const THEME_COLORS = ['green', 'blue', 'yellow', 'red', 'purple'] as const
+const THEME_COLORS = ['yellow', 'red', 'lilac', 'brown', 'pink', 'green'] as const
 export type ThemeColor = (typeof THEME_COLORS)[number]
 
 export interface BingoState {
@@ -50,9 +50,10 @@ function parseHallAlert(raw: unknown): HallAlert | null {
 }
 
 function parseThemeColor(raw: unknown): ThemeColor {
-  if (typeof raw === 'string' && (THEME_COLORS as readonly string[]).includes(raw)) {
-    return raw as ThemeColor
-  }
+  if (typeof raw !== 'string') return 'green'
+  if ((THEME_COLORS as readonly string[]).includes(raw)) return raw as ThemeColor
+  if (raw === 'blue') return 'lilac'
+  if (raw === 'purple') return 'pink'
   return 'green'
 }
 

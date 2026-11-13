@@ -90,12 +90,13 @@ export function setHighContrast(state: BingoState, highContrast: boolean): Bingo
   }
 }
 
-/** Start a fresh game with a chosen hall colour — clears calls and alerts. */
+/** Start a fresh game with a chosen hall colour — clears calls/alerts and reveals QR for prep. */
 export function startNewGame(state: BingoState, themeColor: ThemeColor): BingoState {
   return {
     ...state,
     called: [],
     hallAlert: null,
+    joinHidden: false,
     themeColor,
     updatedAt: Date.now(),
   }

@@ -9,6 +9,7 @@ import { HallAlertBanner } from './HallAlert'
 import { NumberBoard } from './NumberBoard'
 import { RecentCalls } from './RecentCalls'
 import { RoomQr } from './RoomQr'
+import { THEME_LABELS } from './game/themes'
 import { normalizeRoomCode } from './game/roomApi'
 import { useBingoStore } from './game/store'
 import { lastCalled } from './game/types'
@@ -133,7 +134,17 @@ export function DisplayView() {
           </div>
 
           {showQr ? (
-            <div className="display-qr-overlay" role="dialog" aria-label="Phone follow-along QR">
+            <div
+              className="display-qr-overlay"
+              role="dialog"
+              aria-label="Phone follow-along QR and next game colour"
+            >
+              <p className="display-next-game">
+                <span className="display-next-game-kicker">Next game</span>
+                <span className={`display-next-game-colour display-next-game-colour--${state.themeColor}`}>
+                  {THEME_LABELS[state.themeColor]}
+                </span>
+              </p>
               <RoomQr
                 code={room!}
                 size={900}
