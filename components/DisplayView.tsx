@@ -121,18 +121,19 @@ export function DisplayView() {
                 {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
               </div>
               <RecentCalls called={state.called} limit={5} className="recent-calls--display" />
-              {showQr ? (
-                <div className="display-qr-panel">
-                  <RoomQr
-                    code={room!}
-                    size={480}
-                    className="room-qr-wrap--hall"
-                    label="Scan for phone follow-along"
-                  />
-                </div>
-              ) : null}
             </aside>
           </div>
+
+          {showQr ? (
+            <div className="display-qr-overlay" role="dialog" aria-label="Phone follow-along QR">
+              <RoomQr
+                code={room!}
+                size={720}
+                className="room-qr-wrap--hall room-qr-wrap--overlay"
+                label="Scan for phone follow-along"
+              />
+            </div>
+          ) : null}
 
           <DirtyGirty trigger={girty} size="hall" />
         </>
