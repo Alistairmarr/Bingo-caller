@@ -27,10 +27,17 @@ export function CallerView() {
   const [clearOpen, setClearOpen] = useState(false)
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
+  const [nextLocked, setNextLocked] = useState(false)
 
   useEffect(() => {
     void ensureCallerRoom()
   }, [ensureCallerRoom])
+
+  useEffect(() => {
+    if (!nextLocked) return
+    const id = window.setTimeout(() => setNextLocked(false), 1000)
+    return () => window.clearTimeout(id)
+  }, [nextLocked])
 
   const last = lastCalled(state)
   const remaining = remainingCount(state)
@@ -45,6 +52,12 @@ export function CallerView() {
       return
     }
     changeMode(mode)
+  }
+
+  const onNext = () => {
+    if (exhausted || nextLocked) return
+    setNextLocked(true)
+    callNext()
   }
 
   const copyCode = async () => {
@@ -136,7 +149,7 @@ export function CallerView() {
       </section>
 
       <div className="caller-controls">
-        <button type="button" className="btn btn-next" onClick={callNext} disabled={exhausted}>
+        <button type="button" className="btn btn-next" onClick={onNext} disabled={exhausted || nextLocked}>
           Next number
         </button>
         <button type="button" className="btn btn-secondary" onClick={undo} disabled={state.called.length === 0}>
