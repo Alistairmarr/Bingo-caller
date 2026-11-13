@@ -104,13 +104,22 @@ await caller.waitForTimeout(1200)
 if (!(await display.locator('.hall-alert--bingo').count())) {
   throw new Error('Bingo alert should stay until Caller dismisses')
 }
+if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
+  throw new Error('Next number should be disabled while Bingo is showing')
+}
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
+if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
+  throw new Error('Next number should re-enable after dismiss')
+}
 
 await caller.getByRole('button', { name: 'Full House' }).click()
 await display.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
+if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
+  throw new Error('Next number should be disabled while Full House is showing')
+}
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--full-house', { state: 'detached', timeout: 8000 })
 
