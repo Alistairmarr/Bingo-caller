@@ -23,6 +23,7 @@ export function CallerView() {
     changeMode,
     changeJoinHidden,
     signalHallAlert,
+    dismissHallAlert,
     ensureCallerRoom,
   } = useBingoStore({ role: 'caller' })
   const [clearOpen, setClearOpen] = useState(false)
@@ -217,30 +218,44 @@ export function CallerView() {
             </button>
           </div>
 
-          <div className="caller-alerts" role="group" aria-label="Hall win alerts">
-            <button
-              type="button"
-              className="btn btn-bingo"
-              onClick={() => signalHallAlert('bingo')}
-              disabled={!room}
-            >
-              Bingo
-            </button>
-            <button
-              type="button"
-              className="btn btn-full-house"
-              onClick={() => signalHallAlert('full_house')}
-              disabled={!room}
-            >
-              Full House
-            </button>
-          </div>
-
           <section className="caller-board-wrap" aria-label="Called numbers">
             <div className="board-frame board-frame--compact board-frame--square">
               <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
             </div>
           </section>
+
+          {/* Bottom of pad — kept away from Next number to avoid fat-finger misses */}
+          <div className="caller-alerts" role="group" aria-label="Hall win alerts">
+            {state.hallAlert ? (
+              <div className="caller-alert-live">
+                <p className="caller-alert-live-text">
+                  {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones
+                </p>
+                <button type="button" className="btn btn-secondary caller-alert-dismiss" onClick={dismissHallAlert}>
+                  Dismiss announcement
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-bingo"
+                  onClick={() => signalHallAlert('bingo')}
+                  disabled={!room}
+                >
+                  Bingo
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-full-house"
+                  onClick={() => signalHallAlert('full_house')}
+                  disabled={!room}
+                >
+                  Full House
+                </button>
+              </>
+            )}
+          </div>
         </>
       ) : null}
 

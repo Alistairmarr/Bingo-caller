@@ -91,13 +91,28 @@ await caller.getByRole('button', { name: 'Hide code' }).click()
 await caller.waitForSelector('.caller-show-code', { timeout: 5000 })
 await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 8000 })
 
-// Bingo / Full House flash on Display + Mobile
+// Clear any leftover hall alert from a prior run, then Bingo stays until dismiss
+const dismiss = caller.getByRole('button', { name: 'Dismiss announcement' })
+if (await dismiss.count()) {
+  await dismiss.click()
+  await caller.waitForSelector('.btn-bingo', { timeout: 8000 })
+}
 await caller.getByRole('button', { name: 'Bingo' }).click()
 await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await caller.waitForTimeout(1200)
+if (!(await display.locator('.hall-alert--bingo').count())) {
+  throw new Error('Bingo alert should stay until Caller dismisses')
+}
+await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
+await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
+await mobile.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
+
 await caller.getByRole('button', { name: 'Full House' }).click()
 await display.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
+await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
+await display.waitForSelector('.hall-alert--full-house', { state: 'detached', timeout: 8000 })
 
 console.log('room-sync-smoke ok', { code, first: callerNum, second, mobile: true, alerts: true })
 await browser.close()

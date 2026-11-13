@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
+import { useId, type CSSProperties } from 'react'
 import type { HallAlert as HallAlertState } from './game/types'
 
-/** Full-screen Bingo / Full House flash for Display + Mobile. */
+/** Full-screen Bingo / Full House for Display + Mobile — stays until Caller dismisses. */
 export function HallAlertBanner({
   alert,
   size = 'default',
@@ -11,30 +11,19 @@ export function HallAlertBanner({
   alert: HallAlertState | null
   size?: 'default' | 'hall'
 }) {
-  const [visible, setVisible] = useState<HallAlertState | null>(null)
-  const seenId = useRef<number | null>(null)
   const confettiId = useId()
 
-  useEffect(() => {
-    if (!alert) return
-    if (seenId.current === alert.id) return
-    seenId.current = alert.id
-    setVisible(alert)
-    const hide = window.setTimeout(() => setVisible(null), 6000)
-    return () => window.clearTimeout(hide)
-  }, [alert])
+  if (!alert) return null
 
-  if (!visible) return null
-
-  const title = visible.kind === 'bingo' ? 'BINGO!' : 'FULL HOUSE!'
-  const sub = visible.kind === 'bingo' ? 'Line claimed' : 'House claimed'
+  const title = alert.kind === 'bingo' ? 'BINGO!' : 'FULL HOUSE!'
+  const sub = alert.kind === 'bingo' ? 'Line claimed' : 'House claimed'
 
   return (
     <div
       className={[
         'hall-alert',
         size === 'hall' ? 'hall-alert--hall' : '',
-        visible.kind === 'bingo' ? 'hall-alert--bingo' : 'hall-alert--full-house',
+        alert.kind === 'bingo' ? 'hall-alert--bingo' : 'hall-alert--full-house',
       ]
         .filter(Boolean)
         .join(' ')}
