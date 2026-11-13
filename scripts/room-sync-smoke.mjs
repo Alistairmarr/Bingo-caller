@@ -16,7 +16,13 @@ if (!pin) {
 
 await caller.goto(`${base}/caller`)
 await caller.waitForSelector('.caller')
-// Fresh pad / locked hall: enter Caller PIN once
+// Wait for PIN gate or a real room (avoid racing the brief ···· placeholder while connecting)
+await caller.waitForFunction(() => {
+  if (document.querySelector('.caller-pin-input')) return true
+  if (document.querySelector('.caller-show-code')) return true
+  const el = document.querySelector('.room-code')
+  return !!(el && el.textContent && !el.textContent.includes('·'))
+}, null, { timeout: 20000 })
 const pinInput = caller.locator('.caller-pin-input')
 if (await pinInput.count()) {
   await pinInput.fill(pin)
@@ -25,17 +31,13 @@ if (await pinInput.count()) {
 }
 // If a prior test left joinHidden on, reveal the code banner
 const show = caller.locator('.caller-show-code')
-await Promise.race([
-  caller.waitForSelector('.room-code', { timeout: 15000 }),
-  show.waitFor({ state: 'visible', timeout: 15000 }).then(async () => {
-    await show.click()
-    await caller.waitForSelector('.room-code')
-  }),
-])
+if (await show.count()) {
+  await show.click()
+}
 await caller.waitForFunction(() => {
   const el = document.querySelector('.room-code')
   return el && el.textContent && !el.textContent.includes('·')
-})
+}, null, { timeout: 20000 })
 const code = (await caller.locator('.room-code').innerText()).trim()
 if (code !== 'FETE') throw new Error(`expected single hall code FETE, got: ${code}`)
 
@@ -129,5 +131,34 @@ if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--full-house', { state: 'detached', timeout: 8000 })
 
-console.log('room-sync-smoke ok', { code, first: callerNum, second, mobile: true, alerts: true })
+// High-contrast Display toggle from Caller
+await caller.getByRole('button', { name: 'Contrast' }).click()
+await display.waitForSelector('.display--contrast', { timeout: 8000 })
+await caller.getByRole('button', { name: 'Contrast' }).click()
+await display.waitForSelector('.display--contrast', { state: 'detached', timeout: 8000 })
+
+// New game picks a colour, clears the board, themes Display + Mobile
+await caller.getByRole('button', { name: 'New game' }).click()
+await caller.waitForSelector('.dialog--new-game')
+await caller.locator('.theme-swatch--blue').click()
+await caller.getByRole('button', { name: 'Start game' }).click()
+await caller.waitForSelector('.dialog--new-game', { state: 'detached', timeout: 5000 })
+await caller.waitForFunction(() => {
+  const el = document.querySelector('.caller-last')
+  return el && el.textContent && el.textContent.trim() === '—'
+})
+await display.waitForSelector('.display.theme-blue', { timeout: 8000 })
+await mobile.waitForSelector('.mobile.theme-blue', { timeout: 8000 })
+const afterNew = await displayLast()
+if (afterNew !== '—') throw new Error(`new game should clear Display number, got ${afterNew}`)
+
+console.log('room-sync-smoke ok', {
+  code,
+  first: callerNum,
+  second,
+  mobile: true,
+  alerts: true,
+  contrast: true,
+  newGame: 'blue',
+})
 await browser.close()
