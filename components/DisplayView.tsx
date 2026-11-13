@@ -139,18 +139,20 @@ export function DisplayView() {
               role="dialog"
               aria-label="Phone follow-along QR and next game colour"
             >
-              <p className="display-next-game">
-                <span className="display-next-game-kicker">Next game</span>
-                <span className={`display-next-game-colour display-next-game-colour--${state.themeColor}`}>
-                  {THEME_LABELS[state.themeColor]}
-                </span>
-              </p>
-              <RoomQr
-                code={room!}
-                size={900}
-                className="room-qr-wrap--hall room-qr-wrap--overlay"
-                label="Scan with your phone"
-              />
+              <div className="display-qr-prep">
+                <p className="display-next-game">
+                  <span className="display-next-game-kicker">Next game</span>
+                  <span className={`display-next-game-colour display-next-game-colour--${state.themeColor}`}>
+                    {THEME_LABELS[state.themeColor]}
+                  </span>
+                </p>
+                <RoomQr
+                  code={room!}
+                  size={900}
+                  className="room-qr-wrap--hall room-qr-wrap--overlay"
+                  label="Scan with your phone"
+                />
+              </div>
             </div>
           ) : null}
 
