@@ -745,8 +745,8 @@ strong {
   /* Fill the left call panel on landscape pads */
   font-size: clamp(6.5rem, 28vmin, 14rem);
   line-height: 0.82;
-  color: var(--lamp-soft);
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  color: var(--call-number, #fffef2);
+  text-shadow: var(--call-number-shadow, 0 3px 0 rgba(0, 0, 0, 0.55), 0 0 18px rgba(0, 0, 0, 0.35));
 }
 
 .caller-last--pop,
@@ -772,7 +772,7 @@ strong {
   /* Pad landscape: readable at a glance while calling (#5) */
   font-size: clamp(1.65rem, 4.8vmin, 3.1rem);
   line-height: 1.1;
-  color: var(--beech);
+  color: var(--call-name, var(--beech));
   letter-spacing: 0.02em;
   max-width: 18ch;
   text-wrap: balance;
@@ -1088,8 +1088,8 @@ strong {
   line-height: 0.85;
   max-width: 100%;
   overflow: hidden;
-  color: var(--lamp-soft);
-  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 0 40px rgba(255, 212, 90, 0.25);
+  color: var(--call-number, #fffef2);
+  text-shadow: var(--call-number-shadow, 0 5px 0 rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 0, 0, 0.35));
 }
 
 .display--live .display-number {
@@ -1279,8 +1279,10 @@ strong {
 }
 
 .display-number--girty,
-.caller-last--girty {
-  color: #ffd45a;
+.caller-last--girty,
+.mobile-number.display-number--girty {
+  /* Keep theme contrast; don't force a soft yellow that vanishes on gold */
+  color: var(--call-number, #fffef2);
   animation: girty-glow 0.7s ease-out;
 }
 
@@ -1547,8 +1549,8 @@ strong {
   font-weight: 800;
   font-size: clamp(5.5rem, 28vw, 8.5rem);
   line-height: 0.85;
-  color: var(--lamp-soft);
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  color: var(--call-number, #fffef2);
+  text-shadow: var(--call-number-shadow, 0 3px 0 rgba(0, 0, 0, 0.55));
 }
 
 .mobile-number--pop {
@@ -1830,6 +1832,9 @@ strong {
 .theme-green.caller,
 .theme-green.display,
 .theme-green.mobile {
+  --call-number: #fffef0;
+  --call-number-shadow: 0 4px 0 #062014, 0 0 22px rgba(0, 0, 0, 0.45);
+  --call-name: #b8ff9a;
   background:
     radial-gradient(900px 480px at 50% -10%, rgba(255, 225, 74, 0.42), transparent 55%),
     radial-gradient(640px 420px at 8% 92%, rgba(34, 209, 90, 0.55), transparent 52%),
@@ -1839,6 +1844,9 @@ strong {
 .theme-blue.caller,
 .theme-blue.display,
 .theme-blue.mobile {
+  --call-number: #fff36a;
+  --call-number-shadow: 0 4px 0 #061428, 0 0 24px rgba(0, 0, 0, 0.5);
+  --call-name: #d7ecff;
   background:
     radial-gradient(900px 480px at 50% -10%, rgba(120, 200, 255, 0.4), transparent 55%),
     radial-gradient(640px 420px at 8% 92%, rgba(47, 123, 255, 0.55), transparent 52%),
@@ -1848,6 +1856,10 @@ strong {
 .theme-yellow.caller,
 .theme-yellow.display,
 .theme-yellow.mobile {
+  /* Soft yellow number vanishes on gold — use near-black with a light halo */
+  --call-number: #1a1000;
+  --call-number-shadow: 0 0 0 4px rgba(255, 248, 220, 0.92), 0 3px 0 rgba(255, 255, 255, 0.55);
+  --call-name: #2a1800;
   background:
     radial-gradient(900px 480px at 50% -10%, rgba(255, 255, 180, 0.5), transparent 55%),
     radial-gradient(640px 420px at 8% 92%, rgba(255, 180, 40, 0.45), transparent 52%),
@@ -1857,6 +1869,9 @@ strong {
 .theme-red.caller,
 .theme-red.display,
 .theme-red.mobile {
+  --call-number: #fff6c8;
+  --call-number-shadow: 0 4px 0 #2a0610, 0 0 24px rgba(0, 0, 0, 0.5);
+  --call-name: #ffe0a8;
   background:
     radial-gradient(900px 480px at 50% -10%, rgba(255, 180, 120, 0.4), transparent 55%),
     radial-gradient(640px 420px at 8% 92%, rgba(255, 70, 90, 0.45), transparent 52%),
@@ -1866,6 +1881,9 @@ strong {
 .theme-purple.caller,
 .theme-purple.display,
 .theme-purple.mobile {
+  --call-number: #fff59a;
+  --call-number-shadow: 0 4px 0 #180830, 0 0 24px rgba(0, 0, 0, 0.5);
+  --call-name: #f0e0ff;
   background:
     radial-gradient(900px 480px at 50% -10%, rgba(220, 180, 255, 0.4), transparent 55%),
     radial-gradient(640px 420px at 8% 92%, rgba(140, 80, 255, 0.5), transparent 52%),
@@ -1950,6 +1968,8 @@ strong {
   color: #fff;
   text-shadow: none;
   -webkit-text-stroke: 0;
+  --call-number: #fff;
+  --call-number-shadow: none;
 }
 
 .display.display--contrast .board-frame {

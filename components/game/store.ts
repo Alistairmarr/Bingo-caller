@@ -78,6 +78,8 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
   const roomRef = useRef(room)
   roomRef.current = room
   const needsPinRef = useRef(false)
+  /** Blocks rapid Next double-fires before React re-renders / room PUT returns. */
+  const nextBusyUntilRef = useRef(0)
 
   const publishLocal = useCallback((next: BingoState) => {
     writeStored(next)
@@ -87,6 +89,8 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
 
   const publish = useCallback(
     async (next: BingoState) => {
+      // Keep ref in sync immediately so a second Next in the same tick cannot reuse stale called[]
+      stateRef.current = next
       setState(next)
       writeStored(next)
       getChannel()?.postMessage(next)
@@ -94,6 +98,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
       if (code && role === 'caller') {
         try {
           const confirmed = await pushRoom(code, next)
+          stateRef.current = confirmed
           setState(confirmed)
           writeStored(confirmed)
           setRoomStatus('live')
@@ -261,7 +266,13 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
   }, [])
 
   const callNext = useCallback(() => {
-    void publish(nextNumber(stateRef.current))
+    const now = Date.now()
+    if (now < nextBusyUntilRef.current) return
+    const prev = stateRef.current
+    const next = nextNumber(prev)
+    if (next.called.length === prev.called.length) return
+    nextBusyUntilRef.current = now + 1100
+    void publish(next)
   }, [publish])
 
   const undo = useCallback(() => {
