@@ -889,8 +889,8 @@ strong {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  /* Between pre-polish and 2× — large for hall, no column overflow */
-  font-size: clamp(8rem, 28vmin, 20rem);
+  /* Near pre-~2× size, slightly larger for hall; leaves room for recent-5 + QR */
+  font-size: clamp(7rem, 24vmin, 17rem);
   line-height: 0.85;
   max-width: 100%;
   overflow: hidden;
@@ -899,12 +899,12 @@ strong {
 }
 
 .display--live .display-number {
-  font-size: clamp(8.5rem, 30vmin, 22rem);
+  font-size: clamp(7.5rem, 25vmin, 19rem);
 }
 
 @media (min-width: 1800px) {
   .display--live .display-number {
-    font-size: clamp(10rem, 32vmin, 26rem);
+    font-size: clamp(9.5rem, 27vmin, 23rem);
   }
 
   .display--live .ball {
