@@ -4,8 +4,8 @@ import { DEFAULT_STATE, isValidRoomCode } from './types'
 export const CALLER_TOKEN_KEY = 'ancrum-fete-bingo-caller-token'
 
 export class CallerPinError extends Error {
-  readonly kind: 'pin_required' | 'bad_pin'
-  constructor(kind: 'pin_required' | 'bad_pin', message: string) {
+  readonly kind: 'pin_required' | 'bad_pin' | 'pin_not_configured'
+  constructor(kind: 'pin_required' | 'bad_pin' | 'pin_not_configured', message: string) {
     super(message)
     this.kind = kind
     this.name = 'CallerPinError'
@@ -62,10 +62,18 @@ export async function createRoom(
     }),
   })
   const data = await parseJson(res)
-  if (data?.error === 'pin_required' || data?.error === 'bad_pin') {
+  if (
+    data?.error === 'pin_required' ||
+    data?.error === 'bad_pin' ||
+    data?.error === 'pin_not_configured'
+  ) {
     throw new CallerPinError(
       data.error,
-      data.error === 'bad_pin' ? 'Wrong Caller PIN' : 'Caller PIN required',
+      data.error === 'bad_pin'
+        ? 'Wrong Caller PIN'
+        : data.error === 'pin_not_configured'
+          ? 'Caller PIN is not configured on the server'
+          : 'Caller PIN required',
     )
   }
   if (!res.ok || !data?.code || !data?.callerToken) {

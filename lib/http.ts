@@ -3,11 +3,14 @@ import { NextResponse } from 'next/server'
 const MAX_JSON_BYTES = 8_192
 const WINDOW_MS = 60_000
 const MAX_BUCKETS = 16
-/** Named route buckets only — never keyed by client IP / forwarded headers. */
+/**
+ * Separate named buckets so Display GET flood cannot exhaust Caller claim/PUT.
+ * Never keyed by client IP / forwarded headers.
+ */
 const BUCKET_LIMITS: Record<string, number> = {
-  'rooms-read': 6_000, // Display phones poll ~1–2/s; hall can have many devices
-  'rooms-write': 240, // Caller mint/claim + PUTs
-  rooms: 240,
+  'rooms-read': 6_000, // Display phones poll ~1–2/s
+  'rooms-claim': 60, // POST mint / reclaim (PIN)
+  'rooms-write': 240, // Caller PUT updates
 }
 
 type Bucket = { resetAt: number; hits: number }
@@ -27,7 +30,6 @@ function pruneRateMap(now: number) {
   for (const [key, entry] of map) {
     if (entry.resetAt <= now) map.delete(key)
   }
-  // Hard bound so the map cannot grow without limit.
   while (map.size > MAX_BUCKETS) {
     const oldest = map.keys().next().value
     if (oldest === undefined) break
@@ -36,15 +38,14 @@ function pruneRateMap(now: number) {
 }
 
 /**
- * Global per-route bucket rate limit.
- * Does not use client IP or forwarded headers (those are spoofable on a public app).
+ * Per-route bucket rate limit (no forwarded-header identity).
  */
-export function rateLimit(_request: Request, bucket = 'rooms'): NextResponse | null {
+export function rateLimit(_request: Request, bucket: keyof typeof BUCKET_LIMITS): NextResponse | null {
   const now = Date.now()
   pruneRateMap(now)
   const map = rateMap()
   const key = `bucket:${bucket}`
-  const maxHits = BUCKET_LIMITS[bucket] ?? BUCKET_LIMITS.rooms
+  const maxHits = BUCKET_LIMITS[bucket]
   let entry = map.get(key)
   if (!entry || entry.resetAt <= now) {
     entry = { resetAt: now + WINDOW_MS, hits: 0 }

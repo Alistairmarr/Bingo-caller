@@ -1,15 +1,14 @@
 import { timingSafeEqual } from 'node:crypto'
 
-/** Local / smoke default when CALLER_PIN is unset. Published apps should set CALLER_PIN. */
-export const DEFAULT_CALLER_PIN = 'fete'
-
-export function expectedCallerPin(): string {
+/** Returns the configured Caller PIN, or null when CALLER_PIN is unset. Never ships a default. */
+export function configuredCallerPin(): string | null {
   const fromEnv = process.env.CALLER_PIN?.trim()
-  return fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_CALLER_PIN
+  return fromEnv && fromEnv.length > 0 ? fromEnv : null
 }
 
 export function pinMatches(presented: string | null | undefined): boolean {
-  const expected = expectedCallerPin()
+  const expected = configuredCallerPin()
+  if (!expected) return false
   const got = presented?.trim() ?? ''
   if (!got) return false
   const a = Buffer.from(expected)

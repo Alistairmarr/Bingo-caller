@@ -1,5 +1,5 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { pinMatches } from '@/lib/callerPin'
+import { configuredCallerPin, pinMatches } from '@/lib/callerPin'
 import { sql } from '@/lib/db'
 
 /** Single hall room for Ancrum Fete — no multi-room create. */
@@ -16,7 +16,12 @@ export interface BingoState {
 
 export type OpenHallResult =
   | { ok: true; code: string; state: BingoState; callerToken: string }
-  | { ok: false; error: 'pin_required' | 'bad_pin'; code: string; state: BingoState | null }
+  | {
+      ok: false
+      error: 'pin_required' | 'bad_pin' | 'pin_not_configured'
+      code: string
+      state: BingoState | null
+    }
 
 export function isValidCode(code: string): boolean {
   return typeof code === 'string' && /^[A-Z2-9]{4}$/.test(code)
@@ -93,6 +98,9 @@ function claimWithPin(
   pin: string | null,
   game: BingoState | null,
 ): OpenHallResult | { mint: true } {
+  if (!configuredCallerPin()) {
+    return { ok: false, error: 'pin_not_configured', code: HALL_ROOM_CODE, state: game }
+  }
   if (!pin) return { ok: false, error: 'pin_required', code: HALL_ROOM_CODE, state: game }
   if (!pinMatches(pin)) return { ok: false, error: 'bad_pin', code: HALL_ROOM_CODE, state: game }
   return { mint: true }
