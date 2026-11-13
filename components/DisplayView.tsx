@@ -55,7 +55,6 @@ export function DisplayView() {
               <span className="display-mode">{state.mode}-ball</span>
               <span className="display-count">{state.called.length} called</span>
               <span className="display-room">Room {room}</span>
-              {state.joinHidden ? <span className="display-count">QR hidden from Caller</span> : null}
             </>
           ) : (
             <span className="display-count">Join hall room</span>
