@@ -677,6 +677,16 @@ strong {
   }
 }
 
+.caller-call-name {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.15rem, 3.2vmin, 1.85rem);
+  line-height: 1.15;
+  color: var(--beech);
+  letter-spacing: 0.02em;
+}
+
 .caller-sub {
   margin: 0;
   color: var(--ink-dim);
