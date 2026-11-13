@@ -1,8 +1,11 @@
 import { timingSafeEqual } from 'node:crypto'
 
-/** Returns the configured Caller PIN, or null when CALLER_PIN is unset. Never ships a default. */
+/**
+ * Returns the configured Caller PIN, or null when HALL_CALLER_PIN is unset.
+ * Never ships a default. (Renamed from CALLER_PIN so a forgotten secret can be replaced via a fresh bind.)
+ */
 export function configuredCallerPin(): string | null {
-  const fromEnv = process.env.CALLER_PIN?.trim()
+  const fromEnv = process.env.HALL_CALLER_PIN?.trim()
   return fromEnv && fromEnv.length > 0 ? fromEnv : null
 }
 
