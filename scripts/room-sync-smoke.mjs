@@ -107,6 +107,12 @@ if (!(await display.locator('.hall-alert--bingo').count())) {
 if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
   throw new Error('Next number should be disabled while Bingo is showing')
 }
+if (await caller.getByRole('button', { name: 'Undo last' }).isEnabled()) {
+  throw new Error('Undo last should be disabled while Bingo is showing')
+}
+if (await caller.getByRole('button', { name: '90-ball' }).count()) {
+  throw new Error('90/75 mode switch should hide once numbers are called')
+}
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })

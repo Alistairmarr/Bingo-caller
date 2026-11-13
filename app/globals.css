@@ -663,6 +663,28 @@ strong {
   min-width: 0;
 }
 
+.caller-board-column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  min-height: 0;
+  min-width: 0;
+}
+
+.caller-mode-locked {
+  margin: 0;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--wood-edge);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--ink-dim);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .caller-hero {
   text-align: center;
   min-height: 0;
@@ -718,16 +740,34 @@ strong {
   letter-spacing: 0.02em;
 }
 
-.caller-controls {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.55rem;
+.caller-next {
+  min-height: 4.8rem;
+  width: 100%;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.3rem, 3vmin, 1.85rem);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff6f2;
+  border: 3px solid #ffb4a2;
+  background: linear-gradient(180deg, #ff6b4a, #c62828);
+  box-shadow: 0 4px 0 rgba(90, 16, 12, 0.45), 0 10px 22px rgba(120, 20, 12, 0.28);
 }
 
-.caller-next {
-  min-height: 4.6rem;
-  font-size: clamp(1.25rem, 2.8vmin, 1.7rem);
-  letter-spacing: 0.04em;
+.caller-next:not(:disabled):hover,
+.caller-next:not(:disabled):focus-visible {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.caller-next:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(90, 16, 12, 0.45);
+}
+
+.caller-next:disabled {
+  opacity: 0.45;
+  filter: grayscale(0.25);
 }
 
 .caller-secondary {
