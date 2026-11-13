@@ -46,6 +46,11 @@ if (await caller.locator('.room-qr').count()) {
   throw new Error('Caller still shows a QR — QR belongs on Display only')
 }
 
+const soundHits = []
+display.on('request', (req) => {
+  const u = req.url()
+  if (u.includes('/sounds/bingo.wav') || u.includes('/sounds/full-house.wav')) soundHits.push(u)
+})
 await display.goto(`${base}/display`)
 // QR overlay covers the board; number stays in DOM but is not "visible" to Playwright
 await display.waitForSelector('.display-number', { state: 'attached' })
@@ -63,6 +68,22 @@ await mobile.waitForSelector('.mobile-number')
 const displayLast = async () =>
   ((await display.locator('.display-number').textContent()) || '').trim()
 
+// Clear any leftover Bingo/Full House from a prior smoke run
+const earlyDismiss = caller.getByRole('button', { name: 'Dismiss announcement' })
+if (await earlyDismiss.count()) {
+  await earlyDismiss.click()
+  await caller.waitForSelector('.btn-bingo', { timeout: 8000 })
+}
+// Fresh board so debounce counts stay predictable across smoke runs
+if (await caller.getByRole('button', { name: 'Clear board' }).isEnabled()) {
+  await caller.getByRole('button', { name: 'Clear board' }).click()
+  await caller.getByRole('button', { name: 'Clear all' }).click()
+  await caller.waitForFunction(() => {
+    const el = document.querySelector('.caller-last')
+    return el && el.textContent && el.textContent.trim() === '—'
+  })
+}
+
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(1200)
 const callerNum = (await caller.locator('.caller-last').innerText()).trim()
@@ -75,12 +96,14 @@ if (callerNum !== mobileNum) {
   throw new Error(`mobile sync fail after next: caller=${callerNum} mobile=${mobileNum}`)
 }
 
-// Rapid multi-tap must only advance one number
-await Promise.all([
-  caller.getByRole('button', { name: 'Next number' }).click({ force: true }),
-  caller.getByRole('button', { name: 'Next number' }).click({ force: true }),
-  caller.getByRole('button', { name: 'Next number' }).click({ force: true }),
-])
+// Rapid multi-tap must only advance one number (sync triple-click in-page)
+await caller.evaluate(() => {
+  const btn = document.querySelector('.caller-next')
+  if (!(btn instanceof HTMLButtonElement)) throw new Error('missing Next')
+  btn.click()
+  btn.click()
+  btn.click()
+})
 await caller.waitForTimeout(500)
 const afterBurst = (await caller.locator('.caller-last').innerText()).trim()
 const calledCount = await caller.evaluate(() => {
@@ -125,10 +148,18 @@ if (await dismiss.count()) {
   await dismiss.click()
   await caller.waitForSelector('.btn-bingo', { timeout: 8000 })
 }
+const soundsBeforeBingo = soundHits.length
 await caller.getByRole('button', { name: 'Bingo' }).click()
 await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await caller.waitForTimeout(1200)
+// Probe on join and/or Bingo press should touch bingo.wav on Display only
+if (!soundHits.some((u) => u.includes('/sounds/bingo.wav'))) {
+  throw new Error('Display should load /sounds/bingo.wav for Bingo alerts')
+}
+if (await mobile.evaluate(() => performance.getEntriesByType('resource').some((r) => r.name.includes('/sounds/')))) {
+  throw new Error('Mobile must not load hall alert sounds')
+}
 if (!(await display.locator('.hall-alert--bingo').count())) {
   throw new Error('Bingo alert should stay until Caller dismisses')
 }
@@ -151,6 +182,10 @@ if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
 await caller.getByRole('button', { name: 'Full House' }).click()
 await display.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
+await caller.waitForTimeout(800)
+if (!soundHits.some((u) => u.includes('/sounds/full-house.wav'))) {
+  throw new Error('Display should load /sounds/full-house.wav when Full House is pressed')
+}
 if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
   throw new Error('Next number should be disabled while Full House is showing')
 }
@@ -188,5 +223,6 @@ console.log('room-sync-smoke ok', {
   contrast: true,
   newGame: 'blue',
   nextDebounce: true,
+  displaySounds: true,
 })
 await browser.close()

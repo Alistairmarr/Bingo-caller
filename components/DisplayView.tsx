@@ -12,6 +12,7 @@ import { RoomQr } from './RoomQr'
 import { normalizeRoomCode } from './game/roomApi'
 import { useBingoStore } from './game/store'
 import { lastCalled } from './game/types'
+import { useHallAlertSound } from './useHallAlertSound'
 
 export function DisplayView() {
   const searchParams = useSearchParams()
@@ -22,6 +23,9 @@ export function DisplayView() {
   const joined = !!room
   const girty = last === 30
   const showQr = joined && !!room && !state.joinHidden
+
+  // TV speakers only — Bingo / Full House cues (not on Caller or phones)
+  useHallAlertSound(state.hallAlert, joined)
 
   useEffect(() => {
     const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
