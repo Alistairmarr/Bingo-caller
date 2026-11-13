@@ -330,7 +330,11 @@ export function CallerView() {
                 disabled={exhausted || nextLocked || alertActive}
                 title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
               >
-                Next number
+                <span className="caller-next-label">
+                  Next
+                  <br />
+                  number
+                </span>
               </button>
               <section className="caller-board-wrap" aria-label="Called numbers">
                 <div className="board-frame board-frame--compact board-frame--square">

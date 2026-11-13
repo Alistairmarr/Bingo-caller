@@ -796,19 +796,33 @@ strong {
 }
 
 .caller-next {
-  /* Pad-friendly but not board-dominating */
-  min-height: clamp(4.25rem, 8vmin, 5.25rem);
-  width: 100%;
+  /* Big circular tap target for fat-finger pad calling */
+  --caller-next-size: clamp(7.5rem, 22vmin, 11rem);
+  width: var(--caller-next-size);
+  height: var(--caller-next-size);
+  min-height: var(--caller-next-size);
+  min-width: var(--caller-next-size);
+  padding: 0.55rem;
+  justify-self: center;
+  display: grid;
+  place-content: center;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(1.25rem, 2.8vmin, 1.7rem);
-  letter-spacing: 0.05em;
+  font-size: clamp(1.25rem, 2.9vmin, 1.7rem);
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  text-align: center;
   text-transform: uppercase;
   color: #fff6f2;
-  border: 3px solid #ffb4a2;
-  border-radius: 12px;
+  border: 4px solid #ffb4a2;
+  border-radius: 50%;
   background: linear-gradient(180deg, #ff6b4a, #c62828);
-  box-shadow: 0 4px 0 rgba(90, 16, 12, 0.45), 0 10px 22px rgba(120, 20, 12, 0.28);
+  box-shadow: 0 5px 0 rgba(90, 16, 12, 0.45), 0 12px 24px rgba(120, 20, 12, 0.3);
+}
+
+.caller-next-label {
+  display: block;
+  max-width: 6.5ch;
 }
 
 .caller-next:not(:disabled):hover,
@@ -818,8 +832,8 @@ strong {
 }
 
 .caller-next:not(:disabled):active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 0 rgba(90, 16, 12, 0.45);
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 0 2px 0 rgba(90, 16, 12, 0.45), 0 6px 14px rgba(120, 20, 12, 0.28);
 }
 
 .caller-next:disabled {
