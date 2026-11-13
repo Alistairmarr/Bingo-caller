@@ -136,7 +136,8 @@ export function CallerView() {
 
   const onNext = () => {
     // Ref gate first — React state alone can let two taps through before re-render
-    if (exhausted || nextLockRef.current || nextLocked || showPinGate || alertActive) return
+    // Next stays available during Bingo / Full House and dismisses that announcement
+    if (exhausted || nextLockRef.current || nextLocked || showPinGate) return
     nextLockRef.current = true
     setNextLocked(true)
     callNext()
@@ -339,8 +340,8 @@ export function CallerView() {
                 type="button"
                 className="btn caller-next"
                 onClick={onNext}
-                disabled={exhausted || nextLocked || alertActive}
-                title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
+                disabled={exhausted || nextLocked}
+                title={alertActive ? 'Calls the next number and clears Bingo / Full House' : undefined}
               >
                 <span className="caller-next-label">
                   Next
@@ -361,7 +362,8 @@ export function CallerView() {
             {state.hallAlert ? (
               <div className="caller-alert-live">
                 <p className="caller-alert-live-text">
-                  {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones
+                  {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones —
+                  Next number clears it
                 </p>
                 <button type="button" className="btn btn-secondary caller-alert-dismiss" onClick={dismissHallAlert}>
                   Dismiss announcement

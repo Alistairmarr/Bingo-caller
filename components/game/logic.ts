@@ -24,6 +24,8 @@ export function nextNumber(state: BingoState): BingoState {
     called: [...state.called, pick],
     // First call ends prep — hide TV QR (and room code) for the live board
     joinHidden: true,
+    // Next also clears Bingo / Full House so calling can continue without a separate dismiss
+    hallAlert: null,
     updatedAt: Date.now(),
   }
 }
