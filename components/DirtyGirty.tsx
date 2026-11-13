@@ -3,7 +3,14 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 
 /** Village-hall easter egg when 30 is called — text + confetti for 5 seconds. */
-export function DirtyGirty({ trigger }: { trigger: boolean }) {
+export function DirtyGirty({
+  trigger,
+  size = 'default',
+}: {
+  trigger: boolean
+  /** `hall` = bigger type for TV Display only */
+  size?: 'default' | 'hall'
+}) {
   const [visible, setVisible] = useState(false)
   const latch = useRef(false)
   const confettiId = useId()
@@ -24,9 +31,13 @@ export function DirtyGirty({ trigger }: { trigger: boolean }) {
   if (!visible) return null
 
   return (
-    <div className="girty-overlay" role="status" aria-live="assertive">
+    <div
+      className={size === 'hall' ? 'girty-overlay girty-overlay--hall' : 'girty-overlay'}
+      role="status"
+      aria-live="assertive"
+    >
       <div className="girty-confetti" aria-hidden>
-        {Array.from({ length: 48 }, (_, i) => (
+        {Array.from({ length: size === 'hall' ? 72 : 48 }, (_, i) => (
           <span
             key={`${confettiId}-${i}`}
             className="girty-piece"
@@ -42,7 +53,9 @@ export function DirtyGirty({ trigger }: { trigger: boolean }) {
           />
         ))}
       </div>
-      <p className="girty-line">DIRTY GIRTY FROM NUMBER THIRTY</p>
+      <p className={size === 'hall' ? 'girty-line girty-line--hall' : 'girty-line'}>
+        DIRTY GIRTY FROM NUMBER THIRTY
+      </p>
     </div>
   )
 }

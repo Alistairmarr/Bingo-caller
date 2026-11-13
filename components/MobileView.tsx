@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
+import { RecentCalls } from './RecentCalls'
 import { normalizeRoomCode } from './game/roomApi'
 import { useBingoStore } from './game/store'
 import { lastCalled } from './game/types'
@@ -18,7 +19,6 @@ export function MobileView() {
   const last = lastCalled(state)
   const joined = !!room
   const girty = last === 30
-  const recent = [...state.called].slice(-8).reverse()
 
   useEffect(() => {
     const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
@@ -93,18 +93,7 @@ export function MobileView() {
             {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
           </section>
 
-          {recent.length > 0 ? (
-            <section className="mobile-recent" aria-label="Recent calls">
-              <p className="mobile-recent-label">Recent</p>
-              <ol className="mobile-recent-list">
-                {recent.map((n, i) => (
-                  <li key={`${n}-${i}`} className={i === 0 ? 'mobile-recent-item mobile-recent-item--hot' : 'mobile-recent-item'}>
-                    {n}
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ) : null}
+          <RecentCalls called={state.called} limit={5} className="recent-calls--mobile" />
 
           <section className="mobile-board-wrap" aria-label="Called numbers">
             <div className="board-frame board-frame--compact board-frame--square">
