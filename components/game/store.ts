@@ -1,7 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clearCalled, clearHallAlert, nextNumber, setHallAlert, setJoinHidden, setMode, undoLast } from './logic'
+import {
+  clearCalled,
+  clearHallAlert,
+  nextNumber,
+  setHallAlert,
+  setHighContrast,
+  setJoinHidden,
+  setMode,
+  startNewGame,
+  undoLast,
+} from './logic'
 import { CallerPinError, createRoom, fetchRoom, pushRoom } from './roomApi'
 import {
   CHANNEL_NAME,
@@ -9,9 +19,11 @@ import {
   ROOM_STORAGE_KEY,
   STORAGE_KEY,
   parseHallAlert,
+  parseThemeColor,
   type BingoMode,
   type BingoState,
   type HallAlertKind,
+  type ThemeColor,
 } from './types'
 
 function readStored(): BingoState {
@@ -26,6 +38,8 @@ function readStored(): BingoState {
       called: parsed.called.filter((n): n is number => typeof n === 'number'),
       joinHidden: parsed.joinHidden === true,
       hallAlert: parseHallAlert(parsed.hallAlert),
+      highContrast: parsed.highContrast === true,
+      themeColor: parseThemeColor(parsed.themeColor),
       updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
     }
   } catch {
@@ -283,6 +297,20 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     void publish(clearHallAlert(stateRef.current))
   }, [publish])
 
+  const changeHighContrast = useCallback(
+    (on: boolean) => {
+      void publish(setHighContrast(stateRef.current, on))
+    },
+    [publish],
+  )
+
+  const beginNewGame = useCallback(
+    (themeColor: ThemeColor) => {
+      void publish(startNewGame(stateRef.current, themeColor))
+    },
+    [publish],
+  )
+
   return {
     state,
     room,
@@ -296,6 +324,8 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     changeJoinHidden,
     signalHallAlert,
     dismissHallAlert,
+    changeHighContrast,
+    beginNewGame,
     ensureCallerRoom,
     joinRoom,
     publishLocal,

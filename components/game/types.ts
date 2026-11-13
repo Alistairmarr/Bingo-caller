@@ -1,3 +1,5 @@
+import { parseThemeColor, type ThemeColor } from './themes'
+
 export type BingoMode = 75 | 90
 
 export type HallAlertKind = 'bingo' | 'full_house'
@@ -8,6 +10,8 @@ export interface HallAlert {
   id: number
 }
 
+export type { ThemeColor }
+
 export interface BingoState {
   mode: BingoMode
   called: number[]
@@ -15,6 +19,10 @@ export interface BingoState {
   joinHidden: boolean
   /** Caller Bingo / Full House flash for Display + Mobile. */
   hallAlert: HallAlert | null
+  /** High-contrast TV Display (Caller toggles). */
+  highContrast: boolean
+  /** Hall colour theme for backgrounds. */
+  themeColor: ThemeColor
   updatedAt: number
 }
 
@@ -27,6 +35,8 @@ export const DEFAULT_STATE: BingoState = {
   called: [],
   joinHidden: false,
   hallAlert: null,
+  highContrast: false,
+  themeColor: 'green',
   updatedAt: 0,
 }
 
@@ -38,6 +48,8 @@ export function parseHallAlert(raw: unknown): HallAlert | null {
   if (!kind || id === null) return null
   return { kind, id }
 }
+
+export { parseThemeColor }
 
 export function maxBall(mode: BingoMode): number {
   return mode

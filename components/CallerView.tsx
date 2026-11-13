@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
+import { NewGameDialog } from './NewGameDialog'
 import { NumberBoard } from './NumberBoard'
 import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
@@ -27,9 +28,12 @@ export function CallerView() {
     changeJoinHidden,
     signalHallAlert,
     dismissHallAlert,
+    changeHighContrast,
+    beginNewGame,
     ensureCallerRoom,
   } = useBingoStore({ role: 'caller' })
   const [clearOpen, setClearOpen] = useState(false)
+  const [newGameOpen, setNewGameOpen] = useState(false)
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
   const [nextLocked, setNextLocked] = useState(false)
@@ -142,7 +146,10 @@ export function CallerView() {
   }
 
   return (
-    <main className={`caller ${codeHidden ? 'caller--code-hidden' : ''}`}>
+    <main
+      className={`caller theme-${state.themeColor} ${codeHidden ? 'caller--code-hidden' : ''}`}
+      data-theme={state.themeColor}
+    >
       <header className="caller-top">
         <div>
           <Link className="back-link" href="/">
@@ -185,6 +192,24 @@ export function CallerView() {
             title="Show UK bingo call names under the last number (Caller only)"
           >
             Call names
+          </button>
+          <button
+            type="button"
+            className={state.highContrast ? 'mode-btn mode-btn--active' : 'mode-btn'}
+            onClick={() => changeHighContrast(!state.highContrast)}
+            disabled={showPinGate}
+            aria-pressed={state.highContrast}
+            title="High-contrast TV Display for older eyes"
+          >
+            Contrast
+          </button>
+          <button
+            type="button"
+            className="mode-btn"
+            onClick={() => setNewGameOpen(true)}
+            disabled={showPinGate || !room}
+          >
+            New game
           </button>
           {codeHidden ? (
             <button
@@ -356,6 +381,16 @@ export function CallerView() {
         onConfirm={() => {
           clear()
           setClearOpen(false)
+        }}
+      />
+
+      <NewGameDialog
+        open={newGameOpen}
+        current={state.themeColor}
+        onCancel={() => setNewGameOpen(false)}
+        onConfirm={(color) => {
+          beginNewGame(color)
+          setNewGameOpen(false)
         }}
       />
 

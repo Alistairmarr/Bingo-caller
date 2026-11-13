@@ -474,8 +474,29 @@ strong {
 .caller-top-actions {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: min(100%, 58rem);
+}
+
+/* OnePlus Pad 2 landscape (~1496×920 CSS px / 2992×1840 physical) */
+@media (orientation: landscape) and (min-width: 1100px) and (max-height: 1100px) {
+  .caller {
+    padding: 0.45rem 0.85rem 0.55rem;
+    gap: 0.45rem;
+  }
+
+  .caller-top-actions .mode-btn {
+    min-height: 48px;
+    min-width: 0;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .caller-call-name {
+    font-size: clamp(1.9rem, 5.2vmin, 3.4rem);
+  }
 }
 
 .caller-show-code {
@@ -582,7 +603,14 @@ strong {
 }
 
 .room-qr-wrap--overlay .room-qr-caption {
-  font-size: clamp(1.25rem, 3vmin, 2.1rem);
+  margin-top: 0.75rem;
+  font-size: clamp(1.6rem, 4.2vmin, 2.75rem);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--chalk);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .room-qr-caption {
@@ -733,13 +761,16 @@ strong {
 }
 
 .caller-call-name {
-  margin: 0.2rem 0 0;
+  margin: 0.35rem 0 0;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(1.2rem, 3.4vmin, 2rem);
-  line-height: 1.15;
+  font-weight: 800;
+  /* Pad landscape: readable at a glance while calling (#5) */
+  font-size: clamp(1.65rem, 4.8vmin, 3.1rem);
+  line-height: 1.1;
   color: var(--beech);
   letter-spacing: 0.02em;
+  max-width: 18ch;
+  text-wrap: balance;
 }
 
 .caller-next {
@@ -1704,7 +1735,8 @@ strong {
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  z-index: 50;
+  /* Above Dirty Girty / hall alerts on the pad */
+  z-index: 100;
 }
 
 .dialog {
@@ -1732,4 +1764,245 @@ strong {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
+}
+
+.dialog--new-game {
+  width: min(100%, 520px);
+}
+
+.theme-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0 0 1.25rem;
+}
+
+.theme-swatch {
+  min-height: 3.4rem;
+  border-radius: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.theme-swatch--active {
+  outline: 3px solid var(--lamp-soft);
+  outline-offset: 2px;
+  border-color: #fff;
+}
+
+.theme-swatch--green {
+  background: linear-gradient(160deg, #1ec95a, #0a6b34);
+}
+
+.theme-swatch--blue {
+  background: linear-gradient(160deg, #4aa0ff, #1848b8);
+}
+
+.theme-swatch--yellow {
+  background: linear-gradient(160deg, #ffe14a, #d4a017);
+  color: #1a1200;
+  text-shadow: none;
+}
+
+.theme-swatch--red {
+  background: linear-gradient(160deg, #ff5c6c, #b4162e);
+}
+
+.theme-swatch--purple {
+  background: linear-gradient(160deg, #b07cff, #5a2db3);
+}
+
+/* —— Hall colour themes (New game) —— */
+.caller,
+.display,
+.mobile {
+  background-attachment: local;
+}
+
+.theme-green.caller,
+.theme-green.display,
+.theme-green.mobile {
+  background:
+    radial-gradient(900px 480px at 50% -10%, rgba(255, 225, 74, 0.42), transparent 55%),
+    radial-gradient(640px 420px at 8% 92%, rgba(34, 209, 90, 0.55), transparent 52%),
+    linear-gradient(180deg, #0c6b38 0%, #12964c 48%, #0a7a9a 100%);
+}
+
+.theme-blue.caller,
+.theme-blue.display,
+.theme-blue.mobile {
+  background:
+    radial-gradient(900px 480px at 50% -10%, rgba(120, 200, 255, 0.4), transparent 55%),
+    radial-gradient(640px 420px at 8% 92%, rgba(47, 123, 255, 0.55), transparent 52%),
+    linear-gradient(180deg, #0a3d7a 0%, #1a6fd4 48%, #0a8a9a 100%);
+}
+
+.theme-yellow.caller,
+.theme-yellow.display,
+.theme-yellow.mobile {
+  background:
+    radial-gradient(900px 480px at 50% -10%, rgba(255, 255, 180, 0.5), transparent 55%),
+    radial-gradient(640px 420px at 8% 92%, rgba(255, 180, 40, 0.45), transparent 52%),
+    linear-gradient(180deg, #c48a08 0%, #e8b420 42%, #d47818 100%);
+}
+
+.theme-red.caller,
+.theme-red.display,
+.theme-red.mobile {
+  background:
+    radial-gradient(900px 480px at 50% -10%, rgba(255, 180, 120, 0.4), transparent 55%),
+    radial-gradient(640px 420px at 8% 92%, rgba(255, 70, 90, 0.45), transparent 52%),
+    linear-gradient(180deg, #8a1028 0%, #d42848 48%, #a01860 100%);
+}
+
+.theme-purple.caller,
+.theme-purple.display,
+.theme-purple.mobile {
+  background:
+    radial-gradient(900px 480px at 50% -10%, rgba(220, 180, 255, 0.4), transparent 55%),
+    radial-gradient(640px 420px at 8% 92%, rgba(140, 80, 255, 0.5), transparent 52%),
+    linear-gradient(180deg, #3a1878 0%, #6a38c8 48%, #4818a0 100%);
+}
+
+.theme-blue .display-atmosphere {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(140, 210, 255, 0.32), transparent 40%),
+    radial-gradient(circle at 14% 88%, rgba(40, 90, 200, 0.45), transparent 42%),
+    radial-gradient(circle at 90% 68%, rgba(80, 200, 220, 0.22), transparent 40%);
+}
+
+.theme-yellow .display-atmosphere {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(255, 255, 200, 0.4), transparent 40%),
+    radial-gradient(circle at 14% 88%, rgba(255, 160, 40, 0.4), transparent 42%),
+    radial-gradient(circle at 90% 68%, rgba(255, 200, 80, 0.28), transparent 40%);
+}
+
+.theme-red .display-atmosphere {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(255, 200, 140, 0.32), transparent 40%),
+    radial-gradient(circle at 14% 88%, rgba(200, 40, 60, 0.42), transparent 42%),
+    radial-gradient(circle at 90% 68%, rgba(255, 100, 140, 0.25), transparent 40%);
+}
+
+.theme-purple .display-atmosphere {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(220, 190, 255, 0.32), transparent 40%),
+    radial-gradient(circle at 14% 88%, rgba(90, 40, 180, 0.45), transparent 42%),
+    radial-gradient(circle at 90% 68%, rgba(160, 100, 255, 0.25), transparent 40%);
+}
+
+.theme-yellow .display-qr-overlay {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 255, 200, 0.22), transparent 55%),
+    linear-gradient(160deg, #8a6208 0%, #c49010 45%, #a06810 100%);
+}
+
+.theme-blue .display-qr-overlay {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(140, 210, 255, 0.2), transparent 55%),
+    linear-gradient(160deg, #0a2a5a 0%, #1450a0 45%, #0a5a7a 100%);
+}
+
+.theme-red .display-qr-overlay {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 180, 140, 0.2), transparent 55%),
+    linear-gradient(160deg, #5a1020 0%, #a02038 45%, #701040 100%);
+}
+
+.theme-purple .display-qr-overlay {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(220, 180, 255, 0.2), transparent 55%),
+    linear-gradient(160deg, #281050 0%, #5020a0 45%, #381070 100%);
+}
+
+/* —— High-contrast TV Display (Caller toggles) —— */
+.display.display--contrast {
+  background: #000 !important;
+  color: #fff;
+}
+
+.display.display--contrast .display-atmosphere {
+  display: none;
+}
+
+.display.display--contrast .display-bar,
+.display.display--contrast .brand-quiet,
+.display.display--contrast .display-meta,
+.display.display--contrast .display-label,
+.display.display--contrast .display-mode,
+.display.display--contrast .display-count,
+.display.display--contrast .display-room {
+  color: #fff;
+  text-shadow: none;
+  opacity: 1;
+}
+
+.display.display--contrast .display-number {
+  color: #fff;
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+}
+
+.display.display--contrast .board-frame {
+  background: #000;
+  border-color: #fff;
+  box-shadow: none;
+}
+
+.display.display--contrast .ball {
+  background: #111;
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+.display.display--contrast .ball--called {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.display.display--contrast .ball--hot {
+  background: #ffe14a;
+  color: #000;
+  border-color: #fff;
+  box-shadow: 0 0 0 3px #000, 0 0 0 6px #ffe14a;
+}
+
+.display.display--contrast .recent-calls {
+  background: #000;
+  border-color: #fff;
+}
+
+.display.display--contrast .recent-calls-item {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.display.display--contrast .recent-calls-item--hot {
+  background: #ffe14a;
+  color: #000;
+  border-color: #fff;
+}
+
+.display.display--contrast .recent-calls-label {
+  color: #fff;
+}
+
+.display.display--contrast .display-qr-overlay {
+  background: #000;
+}
+
+.display.display--contrast .room-qr-caption {
+  color: #fff;
+  text-shadow: none;
+}
+
+.display.display--contrast .room-qr-link {
+  border-color: #fff;
+  background: #fff;
 }

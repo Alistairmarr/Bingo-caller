@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
+import { useId, type CSSProperties } from 'react'
 
-/** Village-hall easter egg when 30 is called — text + confetti for 5 seconds. */
+/** Village-hall easter egg when 30 is called — stays until the next number. */
 export function DirtyGirty({
   trigger,
   size = 'default',
@@ -11,24 +11,9 @@ export function DirtyGirty({
   /** `hall` = bigger type for TV Display only */
   size?: 'default' | 'hall'
 }) {
-  const [visible, setVisible] = useState(false)
-  const latch = useRef(false)
   const confettiId = useId()
 
-  useEffect(() => {
-    if (!trigger) {
-      latch.current = false
-      setVisible(false)
-      return
-    }
-    if (latch.current) return
-    latch.current = true
-    setVisible(true)
-    const hide = window.setTimeout(() => setVisible(false), 5000)
-    return () => window.clearTimeout(hide)
-  }, [trigger])
-
-  if (!visible) return null
+  if (!trigger) return null
 
   return (
     <div

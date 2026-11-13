@@ -1,4 +1,4 @@
-import type { BingoMode, BingoState, HallAlertKind } from './types'
+import type { BingoMode, BingoState, HallAlertKind, ThemeColor } from './types'
 import { maxBall } from './types'
 
 export function createPool(mode: BingoMode): number[] {
@@ -77,6 +77,26 @@ export function clearHallAlert(state: BingoState): BingoState {
   return {
     ...state,
     hallAlert: null,
+    updatedAt: Date.now(),
+  }
+}
+
+export function setHighContrast(state: BingoState, highContrast: boolean): BingoState {
+  if (state.highContrast === highContrast) return state
+  return {
+    ...state,
+    highContrast,
+    updatedAt: Date.now(),
+  }
+}
+
+/** Start a fresh game with a chosen hall colour — clears calls and alerts. */
+export function startNewGame(state: BingoState, themeColor: ThemeColor): BingoState {
+  return {
+    ...state,
+    called: [],
+    hallAlert: null,
+    themeColor,
     updatedAt: Date.now(),
   }
 }

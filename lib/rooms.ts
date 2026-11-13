@@ -14,11 +14,16 @@ export interface HallAlert {
   id: number
 }
 
+const THEME_COLORS = ['green', 'blue', 'yellow', 'red', 'purple'] as const
+export type ThemeColor = (typeof THEME_COLORS)[number]
+
 export interface BingoState {
   mode: BingoMode
   called: number[]
   joinHidden: boolean
   hallAlert: HallAlert | null
+  highContrast: boolean
+  themeColor: ThemeColor
   updatedAt: number
 }
 
@@ -44,6 +49,13 @@ function parseHallAlert(raw: unknown): HallAlert | null {
   return { kind, id }
 }
 
+function parseThemeColor(raw: unknown): ThemeColor {
+  if (typeof raw === 'string' && (THEME_COLORS as readonly string[]).includes(raw)) {
+    return raw as ThemeColor
+  }
+  return 'green'
+}
+
 /** Parse client game fields; never trust client updatedAt. */
 export function normalizeState(raw: unknown): Omit<BingoState, 'updatedAt'> | null {
   if (!raw || typeof raw !== 'object') return null
@@ -56,11 +68,21 @@ export function normalizeState(raw: unknown): Omit<BingoState, 'updatedAt'> | nu
     : []
   const joinHidden = obj.joinHidden === true
   const hallAlert = parseHallAlert(obj.hallAlert)
-  return { mode, called, joinHidden, hallAlert }
+  const highContrast = obj.highContrast === true
+  const themeColor = parseThemeColor(obj.themeColor)
+  return { mode, called, joinHidden, hallAlert, highContrast, themeColor }
 }
 
 function emptyState(updatedAt = 0): BingoState {
-  return { mode: 90, called: [], joinHidden: false, hallAlert: null, updatedAt }
+  return {
+    mode: 90,
+    called: [],
+    joinHidden: false,
+    hallAlert: null,
+    highContrast: false,
+    themeColor: 'green',
+    updatedAt,
+  }
 }
 
 function mintCallerToken(): string {
@@ -81,6 +103,8 @@ type RoomRow = {
   called: unknown
   join_hidden?: boolean | null
   hall_alert?: unknown
+  high_contrast?: boolean | null
+  theme_color?: string | null
   caller_token?: string | null
   updated_at: number | string
 }
@@ -106,13 +130,15 @@ function rowToState(row: RoomRow): BingoState {
     called: parseCalled(row.called),
     joinHidden: row.join_hidden === true,
     hallAlert: parseHallAlert(row.hall_alert),
+    highContrast: row.high_contrast === true,
+    themeColor: parseThemeColor(row.theme_color),
     updatedAt: Number(row.updated_at),
   }
 }
 
 async function loadHallRow(): Promise<RoomRow | null> {
   const rows = await sql<RoomRow>(
-    `select code, mode, called, join_hidden, hall_alert, caller_token, updated_at from rooms where code = $1`,
+    `select code, mode, called, join_hidden, hall_alert, high_contrast, theme_color, caller_token, updated_at from rooms where code = $1`,
     [HALL_ROOM_CODE],
   )
   return rows[0] ?? null
@@ -163,18 +189,22 @@ export async function getOrCreateHallRoom(
     called: [],
     joinHidden: false,
     hallAlert: null,
+    highContrast: false,
+    themeColor: 'green' as ThemeColor,
   }
   const updatedAt = Date.now()
   const callerToken = mintCallerToken()
   try {
     await sql(
-      `insert into rooms (code, mode, called, join_hidden, hall_alert, caller_token, updated_at) values ($1, $2, $3::jsonb, $4, $5::jsonb, $6, $7)`,
+      `insert into rooms (code, mode, called, join_hidden, hall_alert, high_contrast, theme_color, caller_token, updated_at) values ($1, $2, $3::jsonb, $4, $5::jsonb, $6, $7, $8, $9)`,
       [
         HALL_ROOM_CODE,
         fields.mode,
         JSON.stringify(fields.called),
         fields.joinHidden,
         fields.hallAlert ? JSON.stringify(fields.hallAlert) : null,
+        fields.highContrast,
+        fields.themeColor,
         callerToken,
         updatedAt,
       ],
@@ -204,7 +234,7 @@ export async function getOrCreateHallRoom(
 export async function getRoom(code: string): Promise<BingoState | null> {
   if (!isValidCode(code)) return null
   const rows = await sql<RoomRow>(
-    `select code, mode, called, join_hidden, hall_alert, caller_token, updated_at from rooms where code = $1`,
+    `select code, mode, called, join_hidden, hall_alert, high_contrast, theme_color, caller_token, updated_at from rooms where code = $1`,
     [code],
   )
   if (!rows[0]) return null
@@ -239,13 +269,15 @@ export async function putRoom(
   const updatedAt = Date.now()
   const next: BingoState = { ...fields, updatedAt }
   await sql(
-    `update rooms set mode = $2, called = $3::jsonb, join_hidden = $4, hall_alert = $5::jsonb, updated_at = $6 where code = $1`,
+    `update rooms set mode = $2, called = $3::jsonb, join_hidden = $4, hall_alert = $5::jsonb, high_contrast = $6, theme_color = $7, updated_at = $8 where code = $1`,
     [
       code,
       next.mode,
       JSON.stringify(next.called),
       next.joinHidden,
       next.hallAlert ? JSON.stringify(next.hallAlert) : null,
+      next.highContrast,
+      next.themeColor,
       next.updatedAt,
     ],
   )

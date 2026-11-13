@@ -42,7 +42,10 @@ export function MobileView() {
   }
 
   return (
-    <main className={`mobile ${joined ? 'mobile--live' : ''}`}>
+    <main
+      className={`mobile theme-${state.themeColor} ${joined ? 'mobile--live' : ''}`}
+      data-theme={state.themeColor}
+    >
       <header className="mobile-bar">
         <Link className="brand-quiet" href="/">
           <MarketCrossMark className="brand-inline-cross" />

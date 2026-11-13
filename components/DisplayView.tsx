@@ -47,11 +47,14 @@ export function DisplayView() {
     <main
       className={[
         'display',
+        `theme-${state.themeColor}`,
         joined ? 'display--live' : '',
         showQr ? 'display--with-qr' : '',
+        state.highContrast ? 'display--contrast' : '',
       ]
         .filter(Boolean)
         .join(' ')}
+      data-theme={state.themeColor}
     >
       <div className="display-atmosphere" aria-hidden />
       <header className="display-bar">
@@ -131,7 +134,7 @@ export function DisplayView() {
                 code={room!}
                 size={900}
                 className="room-qr-wrap--hall room-qr-wrap--overlay"
-                label="Scan for phone follow-along"
+                label="Scan with your phone"
               />
             </div>
           ) : null}
