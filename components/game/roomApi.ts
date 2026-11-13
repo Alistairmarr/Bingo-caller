@@ -87,14 +87,32 @@ export async function createRoom(
   }
 }
 
-export async function fetchRoom(code: string): Promise<BingoState | null> {
+/** Per-room ETag from last successful GET — enables cheap 304 Display polls. */
+const roomEtags = new Map<string, string>()
+
+export type FetchRoomResult =
+  | { status: 'missing' }
+  | { status: 'unchanged' }
+  | { status: 'ok'; state: BingoState }
+
+export async function fetchRoom(code: string): Promise<FetchRoomResult> {
   const normalized = normalizeRoomCode(code)
-  if (!isValidRoomCode(normalized)) return null
-  const res = await fetch(`/api/rooms/${normalized}`)
-  if (res.status === 404) return null
+  if (!isValidRoomCode(normalized)) return { status: 'missing' }
+  const etag = roomEtags.get(normalized)
+  const res = await fetch(`/api/rooms/${normalized}`, {
+    headers: etag ? { 'If-None-Match': etag } : undefined,
+    cache: 'no-store',
+  })
+  if (res.status === 304) return { status: 'unchanged' }
+  if (res.status === 404) {
+    roomEtags.delete(normalized)
+    return { status: 'missing' }
+  }
   const data = await parseJson(res)
   if (!res.ok || !data?.state) throw new Error(data?.error || 'Could not load room')
-  return data.state as BingoState
+  const nextEtag = res.headers.get('etag')
+  if (nextEtag) roomEtags.set(normalized, nextEtag)
+  return { status: 'ok', state: data.state as BingoState }
 }
 
 export async function pushRoom(code: string, state: BingoState): Promise<BingoState> {

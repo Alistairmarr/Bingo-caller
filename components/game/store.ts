@@ -126,20 +126,39 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
   useEffect(() => {
     if (role !== 'display' || !room) return
     let cancelled = false
+    let inFlight = false
+    let timer: number | null = null
     setRoomStatus('connecting')
 
+    // ~200ms Display poll + ETag 304s — snappier than 600ms without long-lived sockets.
+    const POLL_MS = 200
+
+    const schedule = () => {
+      if (cancelled) return
+      timer = window.setTimeout(() => {
+        void tick()
+      }, POLL_MS)
+    }
+
     const tick = async () => {
+      if (cancelled || inFlight) {
+        schedule()
+        return
+      }
+      inFlight = true
       try {
         const remote = await fetchRoom(room)
         if (cancelled) return
-        if (!remote) {
+        if (remote.status === 'missing') {
           setRoomStatus('error')
           setRoomError('Room not found — check the code on the Pad')
           return
         }
-        if ((remote.updatedAt ?? 0) >= (stateRef.current.updatedAt ?? 0)) {
-          setState(remote)
-          writeStored(remote)
+        if (remote.status === 'ok') {
+          if ((remote.state.updatedAt ?? 0) >= (stateRef.current.updatedAt ?? 0)) {
+            setState(remote.state)
+            writeStored(remote.state)
+          }
         }
         setRoomStatus('live')
         setRoomError(null)
@@ -148,14 +167,16 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
           setRoomStatus('error')
           setRoomError(err instanceof Error ? err.message : 'Could not reach room')
         }
+      } finally {
+        inFlight = false
+        schedule()
       }
     }
 
     void tick()
-    const id = window.setInterval(tick, 600)
     return () => {
       cancelled = true
-      window.clearInterval(id)
+      if (timer !== null) window.clearTimeout(timer)
     }
   }, [role, room])
 
@@ -198,15 +219,15 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     setRoomStatus('connecting')
     try {
       const remote = await fetchRoom(code)
-      if (!remote) {
+      if (remote.status !== 'ok') {
         setRoomStatus('error')
         setRoomError('Room not found')
         return false
       }
       setRoom(code)
       roomRef.current = code
-      setState(remote)
-      writeStored(remote)
+      setState(remote.state)
+      writeStored(remote.state)
       try {
         localStorage.setItem(ROOM_STORAGE_KEY, code)
       } catch {

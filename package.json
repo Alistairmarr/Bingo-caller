@@ -8,7 +8,8 @@
     "start": "next start --hostname 127.0.0.1 --port 3000",
     "lint": "next lint",
     "smoke": "node scripts/room-sync-smoke.mjs",
-    "smoke:security": "node scripts/room-security-smoke.mjs"
+    "smoke:security": "node scripts/room-security-smoke.mjs",
+    "smoke:latency": "node scripts/sync-latency-smoke.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",

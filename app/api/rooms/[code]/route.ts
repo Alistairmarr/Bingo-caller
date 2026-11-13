@@ -19,7 +19,27 @@ export async function GET(request: Request, { params }: Params) {
   if (!state) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 })
   }
-  return NextResponse.json({ code, state })
+  // Cheap Display polls: unchanged updatedAt → 304 (no JSON body).
+  const etag = `"${code}-${state.updatedAt}"`
+  const inm = request.headers.get('if-none-match')?.trim()
+  if (inm && inm === etag) {
+    return new NextResponse(null, {
+      status: 304,
+      headers: {
+        ETag: etag,
+        'Cache-Control': 'no-store',
+      },
+    })
+  }
+  return NextResponse.json(
+    { code, state },
+    {
+      headers: {
+        ETag: etag,
+        'Cache-Control': 'no-store',
+      },
+    },
+  )
 }
 
 export async function PUT(request: Request, { params }: Params) {
