@@ -9,6 +9,9 @@ import { NumberBoard } from './NumberBoard'
 import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
 import { lastCalled, maxBall, type BingoMode } from './game/types'
+import { ukCallName } from './game/ukCallNames'
+
+const CALL_NAMES_KEY = 'ancrum-fete-bingo-caller-call-names'
 
 export function CallerView() {
   const {
@@ -32,10 +35,19 @@ export function CallerView() {
   const [nextLocked, setNextLocked] = useState(false)
   const [pinDraft, setPinDraft] = useState('')
   const [pinBusy, setPinBusy] = useState(false)
+  const [showCallNames, setShowCallNames] = useState(false)
 
   useEffect(() => {
     void ensureCallerRoom()
   }, [ensureCallerRoom])
+
+  useEffect(() => {
+    try {
+      setShowCallNames(sessionStorage.getItem(CALL_NAMES_KEY) === '1')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   useEffect(() => {
     if (!nextLocked) return
@@ -43,7 +55,20 @@ export function CallerView() {
     return () => window.clearTimeout(id)
   }, [nextLocked])
 
+  const toggleCallNames = () => {
+    setShowCallNames((prev) => {
+      const next = !prev
+      try {
+        sessionStorage.setItem(CALL_NAMES_KEY, next ? '1' : '0')
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+  }
+
   const last = lastCalled(state)
+  const callName = showCallNames ? ukCallName(last) : null
   const remaining = remainingCount(state)
   const exhausted = remaining === 0
   const girty = last === 30
@@ -120,6 +145,16 @@ export function CallerView() {
               75-ball
             </button>
           </div>
+          <button
+            type="button"
+            className={showCallNames ? 'mode-btn mode-btn--active' : 'mode-btn'}
+            onClick={toggleCallNames}
+            disabled={showPinGate}
+            aria-pressed={showCallNames}
+            title="Show UK bingo call names under the last number (Caller only)"
+          >
+            Call names
+          </button>
           {codeHidden ? (
             <button
               type="button"
@@ -194,6 +229,7 @@ export function CallerView() {
             >
               {last ?? '—'}
             </p>
+            {callName ? <p className="caller-call-name">{callName}</p> : null}
             <p className="caller-sub">
               {exhausted
                 ? 'All numbers called'
