@@ -1,15 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clearCalled, nextNumber, setJoinHidden, setMode, undoLast } from './logic'
+import { clearCalled, nextNumber, setHallAlert, setJoinHidden, setMode, undoLast } from './logic'
 import { CallerPinError, createRoom, fetchRoom, pushRoom } from './roomApi'
 import {
   CHANNEL_NAME,
   DEFAULT_STATE,
   ROOM_STORAGE_KEY,
   STORAGE_KEY,
+  parseHallAlert,
   type BingoMode,
   type BingoState,
+  type HallAlertKind,
 } from './types'
 
 function readStored(): BingoState {
@@ -23,6 +25,7 @@ function readStored(): BingoState {
       mode: parsed.mode,
       called: parsed.called.filter((n): n is number => typeof n === 'number'),
       joinHidden: parsed.joinHidden === true,
+      hallAlert: parseHallAlert(parsed.hallAlert),
       updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
     }
   } catch {
@@ -269,6 +272,13 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     [publish],
   )
 
+  const signalHallAlert = useCallback(
+    (kind: HallAlertKind) => {
+      void publish(setHallAlert(stateRef.current, kind))
+    },
+    [publish],
+  )
+
   return {
     state,
     room,
@@ -280,6 +290,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     clear,
     changeMode,
     changeJoinHidden,
+    signalHallAlert,
     ensureCallerRoom,
     joinRoom,
     publishLocal,

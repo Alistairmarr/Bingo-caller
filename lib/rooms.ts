@@ -7,10 +7,18 @@ export const HALL_ROOM_CODE = 'FETE'
 
 export type BingoMode = 75 | 90
 
+export type HallAlertKind = 'bingo' | 'full_house'
+
+export interface HallAlert {
+  kind: HallAlertKind
+  id: number
+}
+
 export interface BingoState {
   mode: BingoMode
   called: number[]
   joinHidden: boolean
+  hallAlert: HallAlert | null
   updatedAt: number
 }
 
@@ -27,6 +35,15 @@ export function isValidCode(code: string): boolean {
   return typeof code === 'string' && /^[A-Z2-9]{4}$/.test(code)
 }
 
+function parseHallAlert(raw: unknown): HallAlert | null {
+  if (!raw || typeof raw !== 'object') return null
+  const obj = raw as Record<string, unknown>
+  const kind = obj.kind === 'bingo' || obj.kind === 'full_house' ? obj.kind : null
+  const id = typeof obj.id === 'number' && Number.isFinite(obj.id) ? obj.id : null
+  if (!kind || id === null) return null
+  return { kind, id }
+}
+
 /** Parse client game fields; never trust client updatedAt. */
 export function normalizeState(raw: unknown): Omit<BingoState, 'updatedAt'> | null {
   if (!raw || typeof raw !== 'object') return null
@@ -38,7 +55,12 @@ export function normalizeState(raw: unknown): Omit<BingoState, 'updatedAt'> | nu
         .slice(0, mode)
     : []
   const joinHidden = obj.joinHidden === true
-  return { mode, called, joinHidden }
+  const hallAlert = parseHallAlert(obj.hallAlert)
+  return { mode, called, joinHidden, hallAlert }
+}
+
+function emptyState(updatedAt = 0): BingoState {
+  return { mode: 90, called: [], joinHidden: false, hallAlert: null, updatedAt }
 }
 
 function mintCallerToken(): string {
@@ -58,6 +80,7 @@ type RoomRow = {
   mode: number
   called: unknown
   join_hidden?: boolean | null
+  hall_alert?: unknown
   caller_token?: string | null
   updated_at: number | string
 }
@@ -82,13 +105,14 @@ function rowToState(row: RoomRow): BingoState {
     mode: (row.mode === 75 ? 75 : 90) as BingoMode,
     called: parseCalled(row.called),
     joinHidden: row.join_hidden === true,
+    hallAlert: parseHallAlert(row.hall_alert),
     updatedAt: Number(row.updated_at),
   }
 }
 
 async function loadHallRow(): Promise<RoomRow | null> {
   const rows = await sql<RoomRow>(
-    `select code, mode, called, join_hidden, caller_token, updated_at from rooms where code = $1`,
+    `select code, mode, called, join_hidden, hall_alert, caller_token, updated_at from rooms where code = $1`,
     [HALL_ROOM_CODE],
   )
   return rows[0] ?? null
@@ -134,13 +158,26 @@ export async function getOrCreateHallRoom(
   const gate = claimWithPin(presentedPin, null)
   if (!('mint' in gate)) return gate
 
-  const fields = normalizeState(state) || { mode: 90 as BingoMode, called: [], joinHidden: false }
+  const fields = normalizeState(state) || {
+    mode: 90 as BingoMode,
+    called: [],
+    joinHidden: false,
+    hallAlert: null,
+  }
   const updatedAt = Date.now()
   const callerToken = mintCallerToken()
   try {
     await sql(
-      `insert into rooms (code, mode, called, join_hidden, caller_token, updated_at) values ($1, $2, $3::jsonb, $4, $5, $6)`,
-      [HALL_ROOM_CODE, fields.mode, JSON.stringify(fields.called), fields.joinHidden, callerToken, updatedAt],
+      `insert into rooms (code, mode, called, join_hidden, hall_alert, caller_token, updated_at) values ($1, $2, $3::jsonb, $4, $5::jsonb, $6, $7)`,
+      [
+        HALL_ROOM_CODE,
+        fields.mode,
+        JSON.stringify(fields.called),
+        fields.joinHidden,
+        fields.hallAlert ? JSON.stringify(fields.hallAlert) : null,
+        callerToken,
+        updatedAt,
+      ],
     )
     return {
       ok: true,
@@ -167,7 +204,7 @@ export async function getOrCreateHallRoom(
 export async function getRoom(code: string): Promise<BingoState | null> {
   if (!isValidCode(code)) return null
   const rows = await sql<RoomRow>(
-    `select code, mode, called, join_hidden, caller_token, updated_at from rooms where code = $1`,
+    `select code, mode, called, join_hidden, hall_alert, caller_token, updated_at from rooms where code = $1`,
     [code],
   )
   if (!rows[0]) return null
@@ -180,19 +217,19 @@ export async function putRoom(
   callerToken: string | null,
 ): Promise<{ state: BingoState; error?: string; status?: number }> {
   if (!isValidCode(code)) {
-    return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'invalid_code', status: 400 }
+    return { state: emptyState(), error: 'invalid_code', status: 400 }
   }
   const fields = normalizeState(state)
   if (!fields) {
-    return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'invalid_state', status: 400 }
+    return { state: emptyState(), error: 'invalid_state', status: 400 }
   }
   if (code !== HALL_ROOM_CODE) {
-    return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'not_found', status: 404 }
+    return { state: emptyState(), error: 'not_found', status: 404 }
   }
 
   const existing = await loadHallRow()
   if (!existing) {
-    return { state: { mode: 90, called: [], joinHidden: false, updatedAt: 0 }, error: 'not_found', status: 404 }
+    return { state: emptyState(), error: 'not_found', status: 404 }
   }
   if (!tokensMatch(existing.caller_token, callerToken)) {
     return { state: rowToState(existing), error: 'unauthorized', status: 401 }
@@ -202,8 +239,15 @@ export async function putRoom(
   const updatedAt = Date.now()
   const next: BingoState = { ...fields, updatedAt }
   await sql(
-    `update rooms set mode = $2, called = $3::jsonb, join_hidden = $4, updated_at = $5 where code = $1`,
-    [code, next.mode, JSON.stringify(next.called), next.joinHidden, next.updatedAt],
+    `update rooms set mode = $2, called = $3::jsonb, join_hidden = $4, hall_alert = $5::jsonb, updated_at = $6 where code = $1`,
+    [
+      code,
+      next.mode,
+      JSON.stringify(next.called),
+      next.joinHidden,
+      next.hallAlert ? JSON.stringify(next.hallAlert) : null,
+      next.updatedAt,
+    ],
   )
   return { state: next }
 }
