@@ -22,6 +22,7 @@ export function CallerView() {
     clear,
     changeMode,
     changeJoinHidden,
+    signalHallAlert,
     ensureCallerRoom,
   } = useBingoStore({ role: 'caller' })
   const [clearOpen, setClearOpen] = useState(false)
@@ -213,6 +214,25 @@ export function CallerView() {
               disabled={state.called.length === 0}
             >
               Clear board
+            </button>
+          </div>
+
+          <div className="caller-alerts" role="group" aria-label="Hall win alerts">
+            <button
+              type="button"
+              className="btn btn-bingo"
+              onClick={() => signalHallAlert('bingo')}
+              disabled={!room}
+            >
+              Bingo
+            </button>
+            <button
+              type="button"
+              className="btn btn-full-house"
+              onClick={() => signalHallAlert('full_house')}
+              disabled={!room}
+            >
+              Full House
             </button>
           </div>
 

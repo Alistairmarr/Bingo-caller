@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
+import { HallAlertBanner } from './HallAlert'
 import { NumberBoard } from './NumberBoard'
 import { RecentCalls } from './RecentCalls'
 import { RoomQr } from './RoomQr'
@@ -128,13 +129,14 @@ export function DisplayView() {
             <div className="display-qr-overlay" role="dialog" aria-label="Phone follow-along QR">
               <RoomQr
                 code={room!}
-                size={720}
+                size={900}
                 className="room-qr-wrap--hall room-qr-wrap--overlay"
                 label="Scan for phone follow-along"
               />
             </div>
           ) : null}
 
+          <HallAlertBanner alert={state.hallAlert} size="hall" />
           <DirtyGirty trigger={girty} size="hall" />
         </>
       )}

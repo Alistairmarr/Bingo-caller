@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
+import { HallAlertBanner } from './HallAlert'
 import { NumberBoard } from './NumberBoard'
 import { RecentCalls } from './RecentCalls'
 import { normalizeRoomCode } from './game/roomApi'
@@ -101,6 +102,7 @@ export function MobileView() {
             </div>
           </section>
 
+          <HallAlertBanner alert={state.hallAlert} />
           <DirtyGirty trigger={girty} />
         </>
       )}

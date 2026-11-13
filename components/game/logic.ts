@@ -1,4 +1,4 @@
-import type { BingoMode, BingoState } from './types'
+import type { BingoMode, BingoState, HallAlertKind } from './types'
 import { maxBall } from './types'
 
 export function createPool(mode: BingoMode): number[] {
@@ -39,6 +39,7 @@ export function clearCalled(state: BingoState): BingoState {
   return {
     ...state,
     called: [],
+    hallAlert: null,
     updatedAt: Date.now(),
   }
 }
@@ -49,6 +50,7 @@ export function setMode(state: BingoState, mode: BingoMode): BingoState {
     ...state,
     mode,
     called: [],
+    hallAlert: null,
     updatedAt: Date.now(),
   }
 }
@@ -58,6 +60,14 @@ export function setJoinHidden(state: BingoState, joinHidden: boolean): BingoStat
   return {
     ...state,
     joinHidden,
+    updatedAt: Date.now(),
+  }
+}
+
+export function setHallAlert(state: BingoState, kind: HallAlertKind): BingoState {
+  return {
+    ...state,
+    hallAlert: { kind, id: Date.now() },
     updatedAt: Date.now(),
   }
 }

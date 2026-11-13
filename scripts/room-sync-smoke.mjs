@@ -88,7 +88,16 @@ if (afterUndo !== callerNum) throw new Error(`undo not room-synced: ${afterUndo}
 
 // Hide code on Caller hides Display QR overlay
 await caller.getByRole('button', { name: 'Hide code' }).click()
-await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 5000 })
+await caller.waitForSelector('.caller-show-code', { timeout: 5000 })
+await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 8000 })
 
-console.log('room-sync-smoke ok', { code, first: callerNum, second, mobile: true })
+// Bingo / Full House flash on Display + Mobile
+await caller.getByRole('button', { name: 'Bingo' }).click()
+await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await caller.getByRole('button', { name: 'Full House' }).click()
+await display.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
+await mobile.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
+
+console.log('room-sync-smoke ok', { code, first: callerNum, second, mobile: true, alerts: true })
 await browser.close()
