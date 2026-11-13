@@ -75,6 +75,31 @@ export function CallerView() {
   const codeHidden = state.joinHidden
   const showPinGate = needsCallerPin || (!room && roomStatus === 'error')
 
+  // Keep the pad awake while Caller is open (hall night).
+  useEffect(() => {
+    if (showPinGate) return
+    let lock: { release: () => Promise<void> } | null = null
+    const request = async () => {
+      try {
+        const nav = navigator as Navigator & {
+          wakeLock?: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> }
+        }
+        lock = (await nav.wakeLock?.request('screen')) ?? null
+      } catch {
+        /* unsupported / denied */
+      }
+    }
+    void request()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void request()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      void lock?.release()
+    }
+  }, [showPinGate])
+
   const submitPin = async (e: FormEvent) => {
     e.preventDefault()
     const pin = pinDraft.trim()
@@ -219,54 +244,63 @@ export function CallerView() {
 
       {!showPinGate ? (
         <>
-          <section className="caller-hero" aria-live="polite">
-            <p className="caller-kicker">
-              {state.mode}-ball · {state.called.length} called
-            </p>
-            <p
-              className={`caller-last ${last ? 'caller-last--pop' : ''} ${girty ? 'caller-last--girty' : ''}`}
-              key={last ?? 'empty'}
-            >
-              {last ?? '—'}
-            </p>
-            {callName ? <p className="caller-call-name">{callName}</p> : null}
-            <p className="caller-sub">
-              {exhausted
-                ? 'All numbers called'
-                : remaining === maxBall(state.mode)
-                  ? 'Ready to call'
-                  : `${remaining} left`}
-            </p>
-          </section>
+          <div className="caller-stage">
+            <div className="caller-call-panel">
+              <section className="caller-hero" aria-live="polite">
+                <p className="caller-kicker">
+                  {state.mode}-ball · {state.called.length} called
+                  {exhausted
+                    ? ''
+                    : remaining === maxBall(state.mode)
+                      ? ' · ready'
+                      : ` · ${remaining} left`}
+                </p>
+                <p
+                  className={`caller-last ${last ? 'caller-last--pop' : ''} ${girty ? 'caller-last--girty' : ''}`}
+                  key={last ?? 'empty'}
+                >
+                  {last ?? '—'}
+                </p>
+                {callName ? <p className="caller-call-name">{callName}</p> : null}
+              </section>
 
-          <div className="caller-controls">
-            <button
-              type="button"
-              className="btn btn-next"
-              onClick={onNext}
-              disabled={exhausted || nextLocked || alertActive}
-              title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
-            >
-              Next number
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={undo} disabled={state.called.length === 0}>
-              Undo last
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => setClearOpen(true)}
-              disabled={state.called.length === 0}
-            >
-              Clear board
-            </button>
-          </div>
-
-          <section className="caller-board-wrap" aria-label="Called numbers">
-            <div className="board-frame board-frame--compact board-frame--square">
-              <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
+              <div className="caller-controls">
+                <button
+                  type="button"
+                  className="btn btn-next caller-next"
+                  onClick={onNext}
+                  disabled={exhausted || nextLocked || alertActive}
+                  title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
+                >
+                  Next number
+                </button>
+                <div className="caller-secondary">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={undo}
+                    disabled={state.called.length === 0}
+                  >
+                    Undo last
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setClearOpen(true)}
+                    disabled={state.called.length === 0}
+                  >
+                    Clear board
+                  </button>
+                </div>
+              </div>
             </div>
-          </section>
+
+            <section className="caller-board-wrap" aria-label="Called numbers">
+              <div className="board-frame board-frame--compact board-frame--square">
+                <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
+              </div>
+            </section>
+          </div>
 
           {/* Bottom of pad — kept away from Next number to avoid fat-finger misses */}
           <div className="caller-alerts" role="group" aria-label="Hall win alerts">
