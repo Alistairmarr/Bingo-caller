@@ -64,7 +64,7 @@ const displayLast = async () =>
   ((await display.locator('.display-number').textContent()) || '').trim()
 
 await caller.getByRole('button', { name: 'Next number' }).click()
-await caller.waitForTimeout(900)
+await caller.waitForTimeout(1200)
 const callerNum = (await caller.locator('.caller-last').innerText()).trim()
 const displayNum = await displayLast()
 const mobileNum = (await mobile.locator('.mobile-number').innerText()).trim()
@@ -75,18 +75,44 @@ if (callerNum !== mobileNum) {
   throw new Error(`mobile sync fail after next: caller=${callerNum} mobile=${mobileNum}`)
 }
 
-await caller.getByRole('button', { name: 'Next number' }).click()
+// Rapid multi-tap must only advance one number
+await Promise.all([
+  caller.getByRole('button', { name: 'Next number' }).click({ force: true }),
+  caller.getByRole('button', { name: 'Next number' }).click({ force: true }),
+  caller.getByRole('button', { name: 'Next number' }).click({ force: true }),
+])
+await caller.waitForTimeout(500)
+const afterBurst = (await caller.locator('.caller-last').innerText()).trim()
+const calledCount = await caller.evaluate(() => {
+  const raw = localStorage.getItem('ancrum-fete-bingo-state')
+  if (!raw) return -1
+  try {
+    return (JSON.parse(raw).called || []).length
+  } catch {
+    return -1
+  }
+})
+if (calledCount !== 2) {
+  throw new Error(`Next debounce failed: expected 2 called after burst, got ${calledCount} (last=${afterBurst})`)
+}
+if (afterBurst === callerNum) {
+  throw new Error('burst should have advanced exactly one number')
+}
+
 await caller.waitForTimeout(900)
-const second = (await caller.locator('.caller-last').innerText()).trim()
-const secondDisplay = await displayLast()
-const secondMobile = (await mobile.locator('.mobile-number').innerText()).trim()
-if (second !== secondDisplay) throw new Error('second call not room-synced')
-if (second !== secondMobile) throw new Error('second call not mobile-synced')
+await caller.getByRole('button', { name: 'Next number' }).click()
+await caller.waitForTimeout(1200)
+const third = (await caller.locator('.caller-last').innerText()).trim()
+const thirdDisplay = await displayLast()
+const thirdMobile = (await mobile.locator('.mobile-number').innerText()).trim()
+if (third !== thirdDisplay) throw new Error('third call not room-synced')
+if (third !== thirdMobile) throw new Error('third call not mobile-synced')
+if (third === afterBurst) throw new Error('expected a new number after debounce window')
 
 await caller.getByRole('button', { name: 'Undo last' }).click()
 await caller.waitForTimeout(900)
 const afterUndo = await displayLast()
-if (afterUndo !== callerNum) throw new Error(`undo not room-synced: ${afterUndo} expected ${callerNum}`)
+if (afterUndo !== afterBurst) throw new Error(`undo not room-synced: ${afterUndo} expected ${afterBurst}`)
 
 // Hide code on Caller hides Display QR overlay
 await caller.getByRole('button', { name: 'Hide code' }).click()
@@ -155,10 +181,12 @@ if (afterNew !== '—') throw new Error(`new game should clear Display number, g
 console.log('room-sync-smoke ok', {
   code,
   first: callerNum,
-  second,
+  afterBurst,
+  third,
   mobile: true,
   alerts: true,
   contrast: true,
   newGame: 'blue',
+  nextDebounce: true,
 })
 await browser.close()

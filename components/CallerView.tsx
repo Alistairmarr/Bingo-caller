@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
@@ -37,6 +37,7 @@ export function CallerView() {
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
   const [nextLocked, setNextLocked] = useState(false)
+  const nextLockRef = useRef(false)
   const [pinDraft, setPinDraft] = useState('')
   const [pinBusy, setPinBusy] = useState(false)
   const [showCallNames, setShowCallNames] = useState(false)
@@ -55,7 +56,10 @@ export function CallerView() {
 
   useEffect(() => {
     if (!nextLocked) return
-    const id = window.setTimeout(() => setNextLocked(false), 1000)
+    const id = window.setTimeout(() => {
+      nextLockRef.current = false
+      setNextLocked(false)
+    }, 1100)
     return () => window.clearTimeout(id)
   }, [nextLocked])
 
@@ -129,7 +133,9 @@ export function CallerView() {
   const alertActive = !!state.hallAlert
 
   const onNext = () => {
-    if (exhausted || nextLocked || showPinGate || alertActive) return
+    // Ref gate first — React state alone can let two taps through before re-render
+    if (exhausted || nextLockRef.current || nextLocked || showPinGate || alertActive) return
+    nextLockRef.current = true
     setNextLocked(true)
     callNext()
   }
