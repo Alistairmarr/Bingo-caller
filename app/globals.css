@@ -1942,6 +1942,22 @@ strong {
   width: min(100%, 560px);
 }
 
+.dialog--checker-qr {
+  width: min(100%, 420px);
+  justify-items: center;
+  text-align: center;
+}
+
+.dialog--checker-qr .dialog-actions {
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.room-qr-wrap--checker .room-qr {
+  width: min(70vw, 280px);
+  height: auto;
+}
+
 .theme-swatches {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2238,4 +2254,214 @@ strong {
 .display.display--contrast .room-qr-link {
   border-color: #000;
   background: #fff;
+}
+
+/* —— Checker pad (quiet called-numbers check; no alerts / Girty) —— */
+.checker {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  padding: 0.75rem clamp(0.75rem, 2vw, 1.25rem) 1rem;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 225, 74, 0.12), transparent 42%),
+    radial-gradient(circle at 88% 78%, rgba(90, 168, 255, 0.14), transparent 40%),
+    linear-gradient(160deg, #0a3d24 0%, #0f6b3a 48%, #0a4a6e 100%);
+}
+
+.checker-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem 1rem;
+}
+
+.checker-role {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.15rem, 2.4vmin, 1.55rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lamp-soft);
+}
+
+.checker-meta {
+  margin: 0 0 0 auto;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+
+.checker-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(14rem, 0.85fr);
+  gap: clamp(0.75rem, 2vw, 1.35rem);
+  min-height: 0;
+  align-items: stretch;
+}
+
+.checker-board-wrap {
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.checker-board-frame {
+  width: min(100%, 100cqh);
+  height: min(100%, 100cqw);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.checker .number-board {
+  height: 100%;
+  width: 100%;
+  grid-template-rows: repeat(var(--board-rows), minmax(0, 1fr));
+  align-content: stretch;
+  justify-items: center;
+  align-items: center;
+  gap: clamp(0.15rem, 0.7vmin, 0.4rem);
+}
+
+.checker .ball {
+  aspect-ratio: 1;
+  width: 92%;
+  height: auto;
+  font-size: clamp(0.85rem, 2.6vmin, 1.65rem);
+}
+
+.checker .ball--idle {
+  background: rgba(8, 14, 10, 0.72);
+  color: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.checker .ball--called {
+  background: linear-gradient(160deg, #fff59a, #ffe14a 40%, #3dff6a);
+  color: #063818;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.checker .ball--hot {
+  background: linear-gradient(160deg, #ffffff, #ffe14a);
+  color: #1a1200;
+  border: 3px solid #fff;
+  transform: scale(1.08);
+}
+
+.checker-side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  min-height: 0;
+  min-width: 0;
+}
+
+.checker-hero {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.checker-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+
+.checker-number {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(4.5rem, 16vmin, 9rem);
+  line-height: 0.85;
+  color: var(--call-number, #fffef2);
+  text-shadow: var(--call-number-shadow);
+}
+
+.checker-number--pop {
+  animation: settle-in 0.4s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.checker-count {
+  margin: 0.55rem 0 0;
+  font-weight: 700;
+  color: var(--lamp-soft);
+  letter-spacing: 0.04em;
+}
+
+.checker-called-list {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.checker-list-kicker {
+  margin: 0 0 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-dim);
+}
+
+.checker-list-empty {
+  margin: 0;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+
+.checker-called-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.checker-chip {
+  min-width: 2.85rem;
+  min-height: 2.85rem;
+  padding: 0.2rem 0.45rem;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.15rem, 2.8vmin, 1.55rem);
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(160deg, #fff59a, #3dff6a);
+  color: #063818;
+  border: 2px solid #fff;
+}
+
+.checker-chip--hot {
+  background: linear-gradient(160deg, #ffffff, #ffe14a);
+  color: #1a1200;
+  outline: 3px solid #fff;
+}
+
+@media (max-width: 900px) {
+  .checker-stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(14rem, 1.1fr) auto;
+  }
+
+  .checker-number {
+    font-size: clamp(3.5rem, 22vw, 6rem);
+  }
 }

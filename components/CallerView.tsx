@@ -7,6 +7,7 @@ import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NewGameDialog } from './NewGameDialog'
 import { NumberBoard } from './NumberBoard'
+import { RoomQr } from './RoomQr'
 import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
 import { lastCalled, maxBall, type BingoMode } from './game/types'
@@ -34,6 +35,7 @@ export function CallerView() {
   } = useBingoStore({ role: 'caller' })
   const [clearOpen, setClearOpen] = useState(false)
   const [newGameOpen, setNewGameOpen] = useState(false)
+  const [checkerQrOpen, setCheckerQrOpen] = useState(false)
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
   const [nextLocked, setNextLocked] = useState(false)
@@ -216,6 +218,16 @@ export function CallerView() {
             disabled={showPinGate || !room}
           >
             New game
+          </button>
+          <button
+            type="button"
+            className={checkerQrOpen ? 'mode-btn mode-btn--active' : 'mode-btn'}
+            onClick={() => setCheckerQrOpen(true)}
+            disabled={showPinGate || !room}
+            aria-pressed={checkerQrOpen}
+            title="Show QR for the checker pad (quiet called-numbers screen)"
+          >
+            Checker QR
           </button>
           {codeHidden ? (
             <button
@@ -403,6 +415,40 @@ export function CallerView() {
           setNewGameOpen(false)
         }}
       />
+
+      {checkerQrOpen && room ? (
+        <div
+          className="dialog-backdrop caller-checker-qr-backdrop"
+          role="presentation"
+          onClick={() => setCheckerQrOpen(false)}
+        >
+          <div
+            className="dialog dialog--checker-qr"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checker-qr-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="checker-qr-title">Checker QR</h2>
+            <p>
+              Scan with the checker’s phone or tablet. Quiet called-numbers screen — no Bingo, Full
+              House, or Dirty Girty pop-ups.
+            </p>
+            <RoomQr
+              code={room}
+              path="checker"
+              size={280}
+              className="room-qr-wrap--checker"
+              label="Scan for checker"
+            />
+            <div className="dialog-actions">
+              <button type="button" className="btn btn-primary" onClick={() => setCheckerQrOpen(false)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ConfirmDialog
         open={modePending !== null}
