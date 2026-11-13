@@ -27,8 +27,9 @@ export function RoomQr({
     const url = mobileJoinUrl(code)
     void QRCode.toDataURL(url, {
       width: Math.max(size * 2, 512),
-      margin: 1,
-      color: { dark: '#142018', light: '#fff8e8' },
+      margin: 2,
+      // Always pure B&W — easier for phone cameras across a hall
+      color: { dark: '#000000', light: '#ffffff' },
       errorCorrectionLevel: 'M',
     }).then((next) => {
       if (!cancelled) setDataUrl(next)
