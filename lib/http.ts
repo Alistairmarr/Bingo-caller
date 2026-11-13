@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server'
 
 const MAX_JSON_BYTES = 8_192
 const WINDOW_MS = 60_000
-const MAX_HITS = 60
+const MAX_BUCKETS = 16
+/** Named route buckets only — never keyed by client IP / forwarded headers. */
+const BUCKET_LIMITS: Record<string, number> = {
+  'rooms-read': 6_000, // Display phones poll ~1–2/s; hall can have many devices
+  'rooms-write': 240, // Caller mint/claim + PUTs
+  rooms: 240,
+}
 
 type Bucket = { resetAt: number; hits: number }
 
@@ -16,23 +22,36 @@ function rateMap(): Map<string, Bucket> {
   return g.__ancrumBingoRate
 }
 
-export function clientKey(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0]!.trim().slice(0, 64)
-  return request.headers.get('x-real-ip')?.trim().slice(0, 64) || 'unknown'
+function pruneRateMap(now: number) {
+  const map = rateMap()
+  for (const [key, entry] of map) {
+    if (entry.resetAt <= now) map.delete(key)
+  }
+  // Hard bound so the map cannot grow without limit.
+  while (map.size > MAX_BUCKETS) {
+    const oldest = map.keys().next().value
+    if (oldest === undefined) break
+    map.delete(oldest)
+  }
 }
 
-export function rateLimit(request: Request, bucket = 'rooms'): NextResponse | null {
-  const key = `${bucket}:${clientKey(request)}`
+/**
+ * Global per-route bucket rate limit.
+ * Does not use client IP or forwarded headers (those are spoofable on a public app).
+ */
+export function rateLimit(_request: Request, bucket = 'rooms'): NextResponse | null {
   const now = Date.now()
+  pruneRateMap(now)
   const map = rateMap()
+  const key = `bucket:${bucket}`
+  const maxHits = BUCKET_LIMITS[bucket] ?? BUCKET_LIMITS.rooms
   let entry = map.get(key)
   if (!entry || entry.resetAt <= now) {
     entry = { resetAt: now + WINDOW_MS, hits: 0 }
     map.set(key, entry)
   }
   entry.hits += 1
-  if (entry.hits > MAX_HITS) {
+  if (entry.hits > maxHits) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
   }
   return null
@@ -67,6 +86,16 @@ export function readCallerToken(request: Request, body?: unknown): string | null
   if (body && typeof body === 'object' && body !== null && 'callerToken' in body) {
     const token = (body as { callerToken?: unknown }).callerToken
     if (typeof token === 'string' && token.trim()) return token.trim()
+  }
+  return null
+}
+
+export function readCallerPin(request: Request, body?: unknown): string | null {
+  const header = request.headers.get('x-caller-pin')?.trim() || ''
+  if (header) return header
+  if (body && typeof body === 'object' && body !== null && 'callerPin' in body) {
+    const pin = (body as { callerPin?: unknown }).callerPin
+    if (typeof pin === 'string' && pin.trim()) return pin.trim()
   }
   return null
 }

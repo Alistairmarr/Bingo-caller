@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
@@ -17,6 +17,7 @@ export function CallerView() {
     room,
     roomStatus,
     roomError,
+    needsCallerPin,
     callNext,
     undo,
     clear,
@@ -28,6 +29,8 @@ export function CallerView() {
   const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
   const [nextLocked, setNextLocked] = useState(false)
+  const [pinDraft, setPinDraft] = useState('')
+  const [pinBusy, setPinBusy] = useState(false)
 
   useEffect(() => {
     void ensureCallerRoom()
@@ -44,6 +47,20 @@ export function CallerView() {
   const exhausted = remaining === 0
   const girty = last === 30
   const codeHidden = state.joinHidden
+  const showPinGate = needsCallerPin || (!room && roomStatus === 'error')
+
+  const submitPin = async (e: FormEvent) => {
+    e.preventDefault()
+    const pin = pinDraft.trim()
+    if (!pin || pinBusy) return
+    setPinBusy(true)
+    try {
+      await ensureCallerRoom(pin)
+      setPinDraft('')
+    } finally {
+      setPinBusy(false)
+    }
+  }
 
   const requestMode = (mode: BingoMode) => {
     if (mode === state.mode) return
@@ -55,7 +72,7 @@ export function CallerView() {
   }
 
   const onNext = () => {
-    if (exhausted || nextLocked) return
+    if (exhausted || nextLocked || showPinGate) return
     setNextLocked(true)
     callNext()
   }
@@ -87,6 +104,7 @@ export function CallerView() {
               type="button"
               className={state.mode === 90 ? 'mode-btn mode-btn--active' : 'mode-btn'}
               onClick={() => requestMode(90)}
+              disabled={showPinGate}
             >
               90-ball
             </button>
@@ -94,19 +112,49 @@ export function CallerView() {
               type="button"
               className={state.mode === 75 ? 'mode-btn mode-btn--active' : 'mode-btn'}
               onClick={() => requestMode(75)}
+              disabled={showPinGate}
             >
               75-ball
             </button>
           </div>
           {codeHidden ? (
-            <button type="button" className="btn btn-secondary caller-show-code" onClick={() => changeJoinHidden(false)}>
+            <button
+              type="button"
+              className="btn btn-secondary caller-show-code"
+              onClick={() => changeJoinHidden(false)}
+              disabled={showPinGate}
+            >
               Show code
             </button>
           ) : null}
         </div>
       </header>
 
-      {!codeHidden ? (
+      {showPinGate ? (
+        <section className="caller-pin-panel" aria-live="polite">
+          <h2>Caller PIN</h2>
+          <p>Enter the hall Caller PIN once. Display and QR stay open without it.</p>
+          <form className="caller-pin-form" onSubmit={(e) => void submitPin(e)}>
+            <input
+              className="caller-pin-input"
+              type="password"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={pinDraft}
+              onChange={(e) => setPinDraft(e.target.value)}
+              placeholder="PIN"
+              aria-label="Caller PIN"
+              disabled={pinBusy}
+            />
+            <button type="submit" className="btn btn-next" disabled={!pinDraft.trim() || pinBusy}>
+              {pinBusy ? 'Unlocking…' : 'Unlock Caller'}
+            </button>
+          </form>
+          {roomError ? <p className="join-error">{roomError}</p> : null}
+        </section>
+      ) : null}
+
+      {!showPinGate && !codeHidden ? (
         <section className="room-banner" aria-live="polite">
           <div className="room-banner-main">
             <div>
@@ -132,44 +180,51 @@ export function CallerView() {
         </section>
       ) : null}
 
-      <section className="caller-hero" aria-live="polite">
-        <p className="caller-kicker">
-          {state.mode}-ball · {state.called.length} called
-        </p>
-        <p className={`caller-last ${last ? 'caller-last--pop' : ''} ${girty ? 'caller-last--girty' : ''}`} key={last ?? 'empty'}>
-          {last ?? '—'}
-        </p>
-        <p className="caller-sub">
-          {exhausted
-            ? 'All numbers called'
-            : remaining === maxBall(state.mode)
-              ? 'Ready to call'
-              : `${remaining} left`}
-        </p>
-      </section>
+      {!showPinGate ? (
+        <>
+          <section className="caller-hero" aria-live="polite">
+            <p className="caller-kicker">
+              {state.mode}-ball · {state.called.length} called
+            </p>
+            <p
+              className={`caller-last ${last ? 'caller-last--pop' : ''} ${girty ? 'caller-last--girty' : ''}`}
+              key={last ?? 'empty'}
+            >
+              {last ?? '—'}
+            </p>
+            <p className="caller-sub">
+              {exhausted
+                ? 'All numbers called'
+                : remaining === maxBall(state.mode)
+                  ? 'Ready to call'
+                  : `${remaining} left`}
+            </p>
+          </section>
 
-      <div className="caller-controls">
-        <button type="button" className="btn btn-next" onClick={onNext} disabled={exhausted || nextLocked}>
-          Next number
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={undo} disabled={state.called.length === 0}>
-          Undo last
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={() => setClearOpen(true)}
-          disabled={state.called.length === 0}
-        >
-          Clear board
-        </button>
-      </div>
+          <div className="caller-controls">
+            <button type="button" className="btn btn-next" onClick={onNext} disabled={exhausted || nextLocked}>
+              Next number
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={undo} disabled={state.called.length === 0}>
+              Undo last
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setClearOpen(true)}
+              disabled={state.called.length === 0}
+            >
+              Clear board
+            </button>
+          </div>
 
-      <section className="caller-board-wrap" aria-label="Called numbers">
-        <div className="board-frame board-frame--compact">
-          <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
-        </div>
-      </section>
+          <section className="caller-board-wrap" aria-label="Called numbers">
+            <div className="board-frame board-frame--compact">
+              <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
+            </div>
+          </section>
+        </>
+      ) : null}
 
       <DirtyGirty trigger={girty} />
 

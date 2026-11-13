@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { rateLimit, readCallerToken, readJsonBody } from '@/lib/http'
+import { rateLimit, readCallerPin, readCallerToken, readJsonBody } from '@/lib/http'
 import { getOrCreateHallRoom } from '@/lib/rooms'
 
 export const runtime = 'nodejs'
 
-/** Opens the single Ancrum hall room (get-or-create). Caller token only if unlocked / proven. */
+/** Opens the single Ancrum hall room. PIN required to mint/reclaim Caller token; Display uses GET. */
 export async function POST(request: Request) {
   const limited = rateLimit(request, 'rooms-write')
   if (limited) return limited
@@ -14,17 +14,16 @@ export async function POST(request: Request) {
   const body = (parsed.value && typeof parsed.value === 'object' ? parsed.value : {}) as {
     state?: unknown
     callerToken?: unknown
+    callerPin?: unknown
   }
   const presented = readCallerToken(request, body)
+  const pin = readCallerPin(request, body)
 
   try {
-    const room = await getOrCreateHallRoom(body.state, presented)
+    const room = await getOrCreateHallRoom(body.state, presented, pin)
     if (!room.ok) {
-      // Public Display can still GET; do not mint/rotate for strangers.
-      return NextResponse.json(
-        { error: room.error, code: room.code, state: room.state },
-        { status: 403 },
-      )
+      const status = room.error === 'bad_pin' ? 401 : 403
+      return NextResponse.json({ error: room.error, code: room.code, state: room.state }, { status })
     }
     return NextResponse.json(
       { code: room.code, state: room.state, callerToken: room.callerToken },
