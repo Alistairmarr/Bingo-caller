@@ -72,8 +72,10 @@ export function CallerView() {
     changeMode(mode)
   }
 
+  const alertActive = !!state.hallAlert
+
   const onNext = () => {
-    if (exhausted || nextLocked || showPinGate) return
+    if (exhausted || nextLocked || showPinGate || alertActive) return
     setNextLocked(true)
     callNext()
   }
@@ -202,7 +204,13 @@ export function CallerView() {
           </section>
 
           <div className="caller-controls">
-            <button type="button" className="btn btn-next" onClick={onNext} disabled={exhausted || nextLocked}>
+            <button
+              type="button"
+              className="btn btn-next"
+              onClick={onNext}
+              disabled={exhausted || nextLocked || alertActive}
+              title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
+            >
               Next number
             </button>
             <button type="button" className="btn btn-secondary" onClick={undo} disabled={state.called.length === 0}>
