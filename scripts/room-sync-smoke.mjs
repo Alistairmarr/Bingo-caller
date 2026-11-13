@@ -63,7 +63,7 @@ const mobileCtx = await browser.newContext({
 })
 const mobile = await mobileCtx.newPage()
 await mobile.goto(`${base}/mobile?code=${code}`)
-await mobile.waitForSelector('.mobile-number')
+await mobile.waitForSelector('.mobile-number, .mobile-prep-colour')
 
 const displayLast = async () =>
   ((await display.locator('.display-number').textContent()) || '').trim()
@@ -198,7 +198,7 @@ await display.waitForSelector('.display--contrast', { timeout: 8000 })
 await caller.getByRole('button', { name: 'Contrast' }).click()
 await display.waitForSelector('.display--contrast', { state: 'detached', timeout: 8000 })
 
-// New game picks a colour, clears the board, themes Display + Mobile
+// New game picks a colour, clears the board, reveals QR + colour for prep
 await caller.getByRole('button', { name: 'New game' }).click()
 await caller.waitForSelector('.dialog--new-game')
 await caller.locator('.theme-swatch--blue').click()
@@ -209,7 +209,10 @@ await caller.waitForFunction(() => {
   return el && el.textContent && el.textContent.trim() === '—'
 })
 await display.waitForSelector('.display.theme-blue', { timeout: 8000 })
+await display.waitForSelector('.display-qr-overlay', { timeout: 8000 })
+await display.waitForSelector('.display-next-game-colour--blue', { timeout: 8000 })
 await mobile.waitForSelector('.mobile.theme-blue', { timeout: 8000 })
+await mobile.waitForSelector('.mobile-prep-colour--blue', { timeout: 8000 })
 const afterNew = await displayLast()
 if (afterNew !== '—') throw new Error(`new game should clear Display number, got ${afterNew}`)
 
@@ -222,6 +225,7 @@ console.log('room-sync-smoke ok', {
   alerts: true,
   contrast: true,
   newGame: 'blue',
+  newGamePrep: true,
   nextDebounce: true,
   displaySounds: true,
 })
