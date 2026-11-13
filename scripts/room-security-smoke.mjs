@@ -1,5 +1,8 @@
 const base = process.env.BINGO_URL || 'http://127.0.0.1:3000'
-const pin = process.env.CALLER_PIN || 'fete'
+const pin = process.env.CALLER_PIN?.trim()
+if (!pin) {
+  throw new Error('Set CALLER_PIN in the environment for smoke (same value the server uses)')
+}
 
 async function json(res) {
   try {

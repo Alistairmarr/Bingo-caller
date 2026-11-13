@@ -11,8 +11,8 @@ Dual-screen village-hall bingo for the **Ancrum Fete Committee**.
 
 ```bash
 npm install
-# ensure DATABASE_URL is unset so local uses PGlite
-env -u DATABASE_URL npm run dev
+# CALLER_PIN is required to claim Caller; DATABASE_URL unset → local PGlite
+CALLER_PIN=your-local-pin env -u DATABASE_URL npm run dev
 ```
 
 App: http://127.0.0.1:3000/
@@ -20,29 +20,23 @@ App: http://127.0.0.1:3000/
 ## Build
 
 ```bash
-npm run build
-npm start
+CALLER_PIN=your-local-pin env -u DATABASE_URL npm run build
+CALLER_PIN=your-local-pin env -u DATABASE_URL npm start
 ```
 
-`cursor-app.json` requests a platform Postgres database for Cursor publish. Never commit `DATABASE_URL`.
+`cursor-app.json` requests a platform Postgres database for Cursor publish. Never commit `DATABASE_URL` or `CALLER_PIN`.
 
 ## Caller PIN
 
-Claiming / reclaiming Caller control requires a short PIN (`CALLER_PIN`). Display and QR stay open without it.
+Claiming / reclaiming Caller control requires `CALLER_PIN` from the environment (Cursor app secret when published). There is **no** shipped default — if unset, Caller claim is refused. Display and QR stay open without it.
 
-- Local / smoke default when unset: `fete`
-- Published app: bind `CALLER_PIN` in Cursor secrets (Pad enters it once; token stays in sessionStorage)
-
-```bash
-# optional override for local
-CALLER_PIN=your-pin env -u DATABASE_URL npm start
-```
+Pad enters the PIN once; the Caller token is kept in sessionStorage.
 
 ## Smoke test
 
-With the app running:
+With the app running **and** `CALLER_PIN` set in the test environment (same value the server was started with):
 
 ```bash
-npm run smoke
-npm run smoke:security
+CALLER_PIN=your-local-pin npm run smoke
+CALLER_PIN=your-local-pin npm run smoke:security
 ```

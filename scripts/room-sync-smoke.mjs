@@ -9,7 +9,10 @@ const displayCtx = await browser.newContext()
 const caller = await callerCtx.newPage()
 const display = await displayCtx.newPage()
 
-const pin = process.env.CALLER_PIN || 'fete'
+const pin = process.env.CALLER_PIN?.trim()
+if (!pin) {
+  throw new Error('Set CALLER_PIN in the environment for smoke (same value the server uses)')
+}
 
 await caller.goto(`${base}/caller`)
 await caller.waitForSelector('.caller')

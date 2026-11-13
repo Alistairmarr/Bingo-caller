@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 /** Opens the single Ancrum hall room. PIN required to mint/reclaim Caller token; Display uses GET. */
 export async function POST(request: Request) {
-  const limited = rateLimit(request, 'rooms-write')
+  const limited = rateLimit(request, 'rooms-claim')
   if (limited) return limited
 
   const parsed = await readJsonBody(request)
@@ -22,7 +22,8 @@ export async function POST(request: Request) {
   try {
     const room = await getOrCreateHallRoom(body.state, presented, pin)
     if (!room.ok) {
-      const status = room.error === 'bad_pin' ? 401 : 403
+      const status =
+        room.error === 'bad_pin' ? 401 : room.error === 'pin_not_configured' ? 503 : 403
       return NextResponse.json({ error: room.error, code: room.code, state: room.state }, { status })
     }
     return NextResponse.json(
