@@ -602,8 +602,13 @@ strong {
 }
 
 .room-qr-wrap--overlay .room-qr {
-  width: min(92vmin, 96vw, 1100px);
+  width: min(72vmin, 88vw, 900px);
   height: auto;
+}
+
+.display-qr-overlay .room-qr-wrap--overlay .room-qr {
+  /* Leave room for “Next game” colour label + caption */
+  width: min(62vmin, 78vw, 820px);
 }
 
 .room-qr-wrap--overlay .room-qr-caption {
@@ -1044,11 +1049,12 @@ strong {
   inset: 0;
   z-index: 60;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   place-items: center;
   align-content: center;
-  gap: clamp(0.75rem, 2.5vmin, 1.5rem);
+  gap: clamp(0.65rem, 2vmin, 1.25rem);
   padding: clamp(0.75rem, 3vmin, 2rem);
+  overflow: auto;
   /* Fully covers board + last-called — no peek-through */
   background:
     radial-gradient(circle at 50% 40%, rgba(255, 212, 90, 0.18), transparent 55%),
