@@ -743,18 +743,19 @@ strong {
 }
 
 .caller-next {
-  min-height: clamp(5.75rem, 12vmin, 7.25rem);
+  /* Pad-friendly but not board-dominating */
+  min-height: clamp(4.25rem, 8vmin, 5.25rem);
   width: 100%;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(1.45rem, 3.4vmin, 2.05rem);
+  font-size: clamp(1.25rem, 2.8vmin, 1.7rem);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #fff6f2;
   border: 3px solid #ffb4a2;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(180deg, #ff6b4a, #c62828);
-  box-shadow: 0 5px 0 rgba(90, 16, 12, 0.45), 0 12px 24px rgba(120, 20, 12, 0.28);
+  box-shadow: 0 4px 0 rgba(90, 16, 12, 0.45), 0 10px 22px rgba(120, 20, 12, 0.28);
 }
 
 .caller-next:not(:disabled):hover,
