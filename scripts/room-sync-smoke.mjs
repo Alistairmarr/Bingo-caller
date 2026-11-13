@@ -52,9 +52,8 @@ display.on('request', (req) => {
   if (u.includes('/sounds/bingo.wav') || u.includes('/sounds/full-house.wav')) soundHits.push(u)
 })
 await display.goto(`${base}/display`)
-// QR overlay covers the board; number stays in DOM but is not "visible" to Playwright
+// Number stays in DOM; QR only while prep (empty board + code shown)
 await display.waitForSelector('.display-number', { state: 'attached' })
-await display.waitForSelector('.display-qr-overlay .room-qr')
 
 const mobileCtx = await browser.newContext({
   viewport: { width: 390, height: 844 },
@@ -83,9 +82,19 @@ if (await caller.getByRole('button', { name: 'Clear board' }).isEnabled()) {
     return el && el.textContent && el.textContent.trim() === '—'
   })
 }
+// Reveal QR for prep if a prior Next hid the code
+const showCode = caller.locator('.caller-show-code')
+if (await showCode.count()) {
+  await showCode.click()
+}
+await display.waitForSelector('.display-qr-overlay .room-qr', { timeout: 8000 })
+await display.waitForSelector('.display-qr-prep .display-next-game-colour', { timeout: 8000 })
 
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(1200)
+// First Next hides the Display QR overlay
+await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 8000 })
+await caller.waitForSelector('.caller-show-code', { timeout: 5000 })
 const callerNum = (await caller.locator('.caller-last').innerText()).trim()
 const displayNum = await displayLast()
 const mobileNum = (await mobile.locator('.mobile-number').innerText()).trim()
@@ -137,7 +146,9 @@ await caller.waitForTimeout(900)
 const afterUndo = await displayLast()
 if (afterUndo !== afterBurst) throw new Error(`undo not room-synced: ${afterUndo} expected ${afterBurst}`)
 
-// Hide code on Caller hides Display QR overlay
+// Show code restores QR mid-game; Hide code removes it again
+await caller.getByRole('button', { name: 'Show code' }).click()
+await display.waitForSelector('.display-qr-overlay .room-qr', { timeout: 8000 })
 await caller.getByRole('button', { name: 'Hide code' }).click()
 await caller.waitForSelector('.caller-show-code', { timeout: 5000 })
 await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 8000 })
@@ -210,11 +221,16 @@ await caller.waitForFunction(() => {
 })
 await display.waitForSelector('.display.theme-pink', { timeout: 8000 })
 await display.waitForSelector('.display-qr-overlay', { timeout: 8000 })
-await display.waitForSelector('.display-next-game-colour--pink', { timeout: 8000 })
+await display.waitForSelector('.display-qr-prep .display-next-game-colour--pink', { timeout: 8000 })
 await mobile.waitForSelector('.mobile.theme-pink', { timeout: 8000 })
 await mobile.waitForSelector('.mobile-prep-colour--pink', { timeout: 8000 })
 const afterNew = await displayLast()
 if (afterNew !== '—') throw new Error(`new game should clear Display number, got ${afterNew}`)
+
+// First Next after New game hides QR again
+await caller.getByRole('button', { name: 'Next number' }).click()
+await caller.waitForTimeout(1200)
+await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 8000 })
 
 console.log('room-sync-smoke ok', {
   code,
@@ -226,6 +242,7 @@ console.log('room-sync-smoke ok', {
   contrast: true,
   newGame: 'pink',
   newGamePrep: true,
+  nextHidesQr: true,
   nextDebounce: true,
   displaySounds: true,
 })

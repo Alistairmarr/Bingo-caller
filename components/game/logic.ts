@@ -22,6 +22,8 @@ export function nextNumber(state: BingoState): BingoState {
   return {
     ...state,
     called: [...state.called, pick],
+    // First call ends prep — hide TV QR (and room code) for the live board
+    joinHidden: true,
     updatedAt: Date.now(),
   }
 }

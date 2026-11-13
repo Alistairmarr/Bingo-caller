@@ -607,8 +607,8 @@ strong {
 }
 
 .display-qr-overlay .room-qr-wrap--overlay .room-qr {
-  /* Leave room for “Next game” colour label + caption */
-  width: min(62vmin, 78vw, 820px);
+  /* Beside the next-game colour — leave room in the row */
+  width: min(52vmin, 58vw, 720px);
 }
 
 .room-qr-wrap--overlay .room-qr-caption {
@@ -1057,10 +1057,7 @@ strong {
   inset: 0;
   z-index: 60;
   display: grid;
-  grid-template-rows: auto auto;
   place-items: center;
-  align-content: center;
-  gap: clamp(0.65rem, 2vmin, 1.25rem);
   padding: clamp(0.75rem, 3vmin, 2rem);
   overflow: auto;
   isolation: isolate;
@@ -1069,6 +1066,15 @@ strong {
     radial-gradient(circle at 50% 40%, rgba(255, 212, 90, 0.18), transparent 55%),
     linear-gradient(160deg, #0a3d2a 0%, #0c5c3a 45%, #0a4a6e 100%);
   animation: display-qr-in 0.28s ease-out;
+}
+
+.display-qr-prep {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 3.5vmin, 2.5rem);
+  max-width: min(96vw, 1400px);
 }
 
 .display-qr-overlay .room-qr-wrap {
@@ -1081,6 +1087,8 @@ strong {
   justify-items: center;
   gap: 0.35rem;
   text-align: center;
+  flex: 0 1 auto;
+  min-width: min(100%, 12rem);
 }
 
 .display-next-game-kicker {
