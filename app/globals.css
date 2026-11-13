@@ -1,26 +1,30 @@
 :root {
-  --night: #122016;
-  --hall: #1a2e22;
-  --green-deep: #1f4a2c;
-  --green-field: #3f8f4a;
-  --beech: #6ecf6a;
-  --sandstone: #ffb07a;
-  --sandstone-deep: #e8894f;
-  --slate: #7f91a8;
-  --lamp: #ffd45a;
-  --lamp-soft: #ffe9a0;
-  --chalk: #fff8ea;
-  --ink: #fff8ea;
-  --ink-dim: rgba(255, 248, 234, 0.86);
-  --called: #58d46a;
-  --called-ink: #0c2412;
-  --hot-ink: #2a1a08;
-  --danger: #ff5c4a;
-  --danger-deep: #d63a2c;
-  --wood: #7a5438;
-  --wood-edge: #c4895a;
-  --line: rgba(255, 248, 234, 0.22);
-  --shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  /* Really bright fete palette — hillside green, jersey blue, rainbow lamp */
+  --night: #0a3d24;
+  --hall: #0f6b3a;
+  --green-deep: #0d8f3f;
+  --green-field: #22d15a;
+  --beech: #7dff7a;
+  --sky: #2f7bff;
+  --sky-hot: #5aa8ff;
+  --sandstone: #ff8a3d;
+  --sandstone-deep: #ff5c1a;
+  --slate: #8eb6ff;
+  --lamp: #ffe14a;
+  --lamp-soft: #fff59a;
+  --coral: #ff4d6d;
+  --chalk: #ffffff;
+  --ink: #ffffff;
+  --ink-dim: rgba(255, 255, 255, 0.92);
+  --called: #3dff6a;
+  --called-ink: #063818;
+  --hot-ink: #1a1200;
+  --danger: #ff3b5c;
+  --danger-deep: #e0183a;
+  --wood: #ff9b4a;
+  --wood-edge: #ffe14a;
+  --line: rgba(255, 255, 255, 0.28);
+  --shadow: 0 16px 40px rgba(0, 40, 20, 0.28);
   --font-display: 'Rokkitt', 'Palatino Linotype', serif;
   --font-ui: 'Source Sans 3', 'Segoe UI', sans-serif;
   --radius: 10px;
@@ -48,10 +52,10 @@ body {
   font-family: var(--font-ui);
   color: var(--ink);
   background:
-    radial-gradient(1100px 620px at 50% -8%, rgba(255, 212, 90, 0.32), transparent 54%),
-    radial-gradient(760px 540px at 6% 90%, rgba(63, 143, 74, 0.55), transparent 52%),
-    radial-gradient(680px 460px at 94% 24%, rgba(255, 176, 122, 0.28), transparent 48%),
-    linear-gradient(180deg, #0e1a12 0%, var(--hall) 42%, #163222 100%);
+    radial-gradient(1100px 620px at 50% -8%, rgba(255, 225, 74, 0.55), transparent 54%),
+    radial-gradient(760px 540px at 6% 90%, rgba(34, 209, 90, 0.65), transparent 52%),
+    radial-gradient(680px 460px at 94% 24%, rgba(47, 123, 255, 0.4), transparent 48%),
+    linear-gradient(180deg, #0c6b38 0%, #12964c 42%, #0a7a9a 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }
@@ -61,9 +65,9 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.11;
+  opacity: 0.08;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: multiply;
+  mix-blend-mode: soft-light;
   z-index: 0;
 }
 
@@ -110,22 +114,36 @@ strong {
   min-height: 100dvh;
   display: grid;
   place-content: end center;
-  gap: 1.5rem;
+  gap: 1.35rem;
   padding: 2rem 1.25rem 2.25rem;
   position: relative;
   overflow: hidden;
 }
 
-.home-scene {
+.home-photo {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
+  overflow: hidden;
 }
 
-.home-scene-art {
+.home-photo-img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+  transform: scale(1.06);
+  animation: home-photo-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes home-photo-drift {
+  from {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.12) translate3d(-1.5%, -1%, 0);
+  }
 }
 
 .home-veil {
@@ -133,13 +151,15 @@ strong {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(12, 17, 14, 0.28) 0%,
-    rgba(12, 17, 14, 0.18) 28%,
-    rgba(12, 17, 14, 0.55) 58%,
-    rgba(12, 17, 14, 0.86) 100%
-  );
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 70, 40, 0.25) 0%,
+      rgba(8, 70, 40, 0.12) 32%,
+      rgba(6, 40, 70, 0.45) 62%,
+      rgba(4, 28, 48, 0.82) 100%
+    ),
+    linear-gradient(90deg, rgba(255, 225, 74, 0.12), transparent 40%, rgba(47, 123, 255, 0.18));
 }
 
 .home-brand {
@@ -148,6 +168,18 @@ strong {
   margin-inline: auto;
   position: relative;
   z-index: 1;
+  animation: home-rise 0.7s ease-out both;
+}
+
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-emblems {
@@ -159,8 +191,8 @@ strong {
 .home-cross {
   width: 3.1rem;
   height: auto;
-  color: #c4c0b0;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+  color: var(--lamp-soft);
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45));
 }
 
 .brand-place {
@@ -168,45 +200,50 @@ strong {
   font-size: 0.78rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--sandstone);
+  color: var(--lamp);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
   flex-wrap: wrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
 }
 
 .place-keys {
   width: 2.1rem;
   height: auto;
-  color: var(--sandstone);
+  color: var(--lamp);
 }
 
 .brand-mark {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.4rem, 8vw, 4.1rem);
+  font-size: clamp(2.5rem, 8.5vw, 4.3rem);
   letter-spacing: -0.01em;
   line-height: 0.95;
   margin: 0 0 0.55rem;
-  color: var(--lamp-soft);
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  color: #fff;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    0 0 28px rgba(255, 225, 74, 0.45);
 }
 
 .home-brand h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.25rem, 3.2vw, 1.6rem);
-  color: var(--ink-dim);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 3.4vw, 1.75rem);
+  color: var(--lamp-soft);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .lede {
-  margin: 1rem 0 0;
-  color: var(--ink-dim);
-  font-size: 1.05rem;
+  margin: 0.85rem 0 0;
+  color: #fff;
+  font-size: 1.08rem;
   line-height: 1.45;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
 }
 
 .home-actions {
@@ -216,6 +253,7 @@ strong {
   margin-inline: auto;
   position: relative;
   z-index: 1;
+  animation: home-rise 0.7s ease-out 0.12s both;
 }
 
 @media (min-width: 720px) {
@@ -230,9 +268,11 @@ strong {
   margin: 0 auto;
   max-width: 34rem;
   text-align: center;
-  color: rgba(236, 231, 219, 0.55);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 0.9rem;
   line-height: 1.4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  animation: home-rise 0.7s ease-out 0.22s both;
 }
 
 .launch {
@@ -241,16 +281,41 @@ strong {
   padding: 1.35rem 1.3rem;
   min-height: 7.2rem;
   border-radius: var(--radius);
-  border: 2px solid var(--wood-edge);
-  background: linear-gradient(180deg, rgba(90, 70, 54, 0.35), rgba(28, 36, 25, 0.92));
+  border: 3px solid rgba(255, 255, 255, 0.55);
   box-shadow: var(--shadow);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.22s ease, filter 0.22s ease, border-color 0.22s ease;
+}
+
+.launch-caller {
+  background: linear-gradient(165deg, #fff59a 0%, #ffe14a 42%, #ff8a3d 100%);
+  color: var(--hot-ink);
+}
+
+.launch-display {
+  background: linear-gradient(165deg, #7dff7a 0%, #22d15a 38%, #2f7bff 100%);
+  color: #062014;
+}
+
+.launch-caller .launch-kicker,
+.launch-caller .launch-hint {
+  color: rgba(42, 26, 8, 0.78);
+}
+
+.launch-display .launch-kicker,
+.launch-display .launch-hint {
+  color: rgba(6, 32, 20, 0.78);
+}
+
+.launch-caller .launch-title,
+.launch-display .launch-title {
+  color: inherit;
 }
 
 .launch:hover,
 .launch:focus-visible {
-  transform: translateY(-2px);
-  border-color: var(--sandstone);
+  transform: translateY(-4px) scale(1.015);
+  filter: brightness(1.06);
+  border-color: #fff;
   outline: none;
 }
 
@@ -258,23 +323,16 @@ strong {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--beech);
   font-weight: 700;
-}
-
-.launch-display .launch-kicker {
-  color: var(--sandstone);
 }
 
 .launch-title {
   font-family: var(--font-display);
   font-size: 2.15rem;
   font-weight: 800;
-  color: var(--chalk);
 }
 
 .launch-hint {
-  color: var(--ink-dim);
   font-size: 0.98rem;
 }
 

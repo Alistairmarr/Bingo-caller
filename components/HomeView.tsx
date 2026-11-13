@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { CrossKeysMark, MarketCrossMark, VillageGreenScene } from './Emblems'
+import { CrossKeysMark, MarketCrossMark } from './Emblems'
 
 export function HomeView() {
   return (
     <main className="home">
-      <div className="home-scene" aria-hidden>
-        <VillageGreenScene className="home-scene-art" />
+      <div className="home-photo" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="home-photo-img" src="/home-hero.jpg" alt="" />
       </div>
       <div className="home-veil" aria-hidden />
 
@@ -18,18 +19,15 @@ export function HomeView() {
           Ancrum Fete Committee · Scottish Borders
         </p>
         <p className="brand-mark">Ancrum Fete Bingo</p>
-        <h1>On the green · village hall night</h1>
-        <p className="lede">
-          On the <strong>Pad</strong>, open Caller — one hall room with a big QR. On the{' '}
-          <strong>TV</strong>, open Display and join. Phones in the hall can scan the QR to follow along.
-        </p>
+        <h1>Bright hall night · Pad Caller · TV Display</h1>
+        <p className="lede">Pick a view — one hall room, big QR, numbers the whole green can see.</p>
       </header>
 
       <nav className="home-actions" aria-label="Views">
         <Link className="launch launch-caller" href="/caller">
           <span className="launch-kicker">Pad · games master</span>
           <span className="launch-title">Caller</span>
-          <span className="launch-hint">Creates a room code · Next · Undo · Clear</span>
+          <span className="launch-hint">Unlock with PIN · Next · Undo · Clear</span>
         </Link>
         <Link className="launch launch-display" href="/display">
           <span className="launch-kicker">TV · hall screen</span>
@@ -39,7 +37,7 @@ export function HomeView() {
       </nav>
 
       <p className="home-footnote">
-        Same browser / Try Live: Caller and Display still sync locally without a room if you open both tabs here.
+        Same browser / Try Live: open both tabs here to sync locally without a room.
       </p>
     </main>
   )
