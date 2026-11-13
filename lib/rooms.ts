@@ -1,4 +1,5 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
+import { pinMatches } from '@/lib/callerPin'
 import { sql } from '@/lib/db'
 
 /** Single hall room for Ancrum Fete — no multi-room create. */
@@ -15,7 +16,7 @@ export interface BingoState {
 
 export type OpenHallResult =
   | { ok: true; code: string; state: BingoState; callerToken: string }
-  | { ok: false; error: 'caller_locked'; code: string; state: BingoState }
+  | { ok: false; error: 'pin_required' | 'bad_pin'; code: string; state: BingoState | null }
 
 export function isValidCode(code: string): boolean {
   return typeof code === 'string' && /^[A-Z2-9]{4}$/.test(code)
@@ -88,29 +89,42 @@ async function loadHallRow(): Promise<RoomRow | null> {
   return rows[0] ?? null
 }
 
+function claimWithPin(
+  pin: string | null,
+  game: BingoState | null,
+): OpenHallResult | { mint: true } {
+  if (!pin) return { ok: false, error: 'pin_required', code: HALL_ROOM_CODE, state: game }
+  if (!pinMatches(pin)) return { ok: false, error: 'bad_pin', code: HALL_ROOM_CODE, state: game }
+  return { mint: true }
+}
+
 /**
  * Get-or-create the hall room.
- * Mint only when no caller token exists yet, or when the presented token matches.
- * Never rotate/overwrite for an anonymous visitor.
+ * - Matching caller token → resume (no PIN).
+ * - Valid Caller PIN → mint/rotate token (first claim or reclaim).
+ * - Otherwise → pin_required / bad_pin (never mint for strangers).
  */
 export async function getOrCreateHallRoom(
   state: unknown,
   presentedToken: string | null,
+  presentedPin: string | null,
 ): Promise<OpenHallResult> {
   const existing = await loadHallRow()
   if (existing) {
     const game = rowToState(existing)
     const current = existing.caller_token?.trim() || ''
-    if (!current) {
-      const callerToken = mintCallerToken()
-      await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerToken])
-      return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken }
-    }
-    if (tokensMatch(current, presentedToken)) {
+    if (current && tokensMatch(current, presentedToken)) {
       return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: current }
     }
-    return { ok: false, error: 'caller_locked', code: HALL_ROOM_CODE, state: game }
+    const gate = claimWithPin(presentedPin, game)
+    if (!('mint' in gate)) return gate
+    const callerToken = mintCallerToken()
+    await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerToken])
+    return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken }
   }
+
+  const gate = claimWithPin(presentedPin, null)
+  if (!('mint' in gate)) return gate
 
   const fields = normalizeState(state) || { mode: 90 as BingoMode, called: [], joinHidden: false }
   const updatedAt = Date.now()
@@ -131,15 +145,14 @@ export async function getOrCreateHallRoom(
     if (!again) throw new Error('Could not open hall room')
     const game = rowToState(again)
     const current = again.caller_token?.trim() || ''
-    if (!current) {
-      const minted = mintCallerToken()
-      await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, minted])
-      return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: minted }
-    }
-    if (tokensMatch(current, presentedToken)) {
+    if (current && tokensMatch(current, presentedToken)) {
       return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: current }
     }
-    return { ok: false, error: 'caller_locked', code: HALL_ROOM_CODE, state: game }
+    const retryGate = claimWithPin(presentedPin, game)
+    if (!('mint' in retryGate)) return retryGate
+    const minted = mintCallerToken()
+    await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, minted])
+    return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: minted }
   }
 }
 

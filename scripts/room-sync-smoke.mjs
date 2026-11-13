@@ -9,8 +9,16 @@ const displayCtx = await browser.newContext()
 const caller = await callerCtx.newPage()
 const display = await displayCtx.newPage()
 
+const pin = process.env.CALLER_PIN || 'fete'
+
 await caller.goto(`${base}/caller`)
 await caller.waitForSelector('.caller')
+// Fresh pad / locked hall: enter Caller PIN once
+const pinInput = caller.locator('.caller-pin-input')
+if (await pinInput.count()) {
+  await pinInput.fill(pin)
+  await caller.getByRole('button', { name: 'Unlock Caller' }).click()
+}
 // If a prior test left joinHidden on, reveal the code banner
 const show = caller.locator('.caller-show-code')
 if (await show.count()) await show.click()

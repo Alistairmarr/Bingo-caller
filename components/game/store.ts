@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { clearCalled, nextNumber, setJoinHidden, setMode, undoLast } from './logic'
-import { createRoom, fetchRoom, pushRoom } from './roomApi'
+import { CallerPinError, createRoom, fetchRoom, pushRoom } from './roomApi'
 import {
   CHANNEL_NAME,
   DEFAULT_STATE,
@@ -55,10 +55,12 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
   const [room, setRoom] = useState<string | null>(roomCode)
   const [roomStatus, setRoomStatus] = useState<'idle' | 'connecting' | 'live' | 'error'>('idle')
   const [roomError, setRoomError] = useState<string | null>(null)
+  const [needsCallerPin, setNeedsCallerPin] = useState(false)
   const stateRef = useRef(state)
   stateRef.current = state
   const roomRef = useRef(room)
   roomRef.current = room
+  const needsPinRef = useRef(false)
 
   const publishLocal = useCallback((next: BingoState) => {
     writeStored(next)
@@ -80,8 +82,13 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
           setRoomStatus('live')
           setRoomError(null)
         } catch (err) {
+          const message = err instanceof Error ? err.message : 'Room sync failed'
           setRoomStatus('error')
-          setRoomError(err instanceof Error ? err.message : 'Room sync failed')
+          setRoomError(message)
+          if (/Caller (token missing|control lost|PIN)/i.test(message)) {
+            needsPinRef.current = true
+            setNeedsCallerPin(true)
+          }
         }
       }
     },
@@ -152,12 +159,12 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     }
   }, [role, room])
 
-  const ensureCallerRoom = useCallback(async () => {
-    if (roomRef.current) return roomRef.current
+  const ensureCallerRoom = useCallback(async (callerPin?: string) => {
+    if (roomRef.current && !needsPinRef.current && !callerPin) return roomRef.current
     setRoomStatus('connecting')
     try {
-      // Single hall room (server returns FETE / existing)
-      const created = await createRoom(stateRef.current)
+      // Single hall room — PIN required to mint/reclaim; matching token resumes without PIN
+      const created = await createRoom(stateRef.current, callerPin)
       setRoom(created.code)
       roomRef.current = created.code
       try {
@@ -166,13 +173,21 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
       } catch {
         /* ignore */
       }
-      // Prefer server state (server-stamped updatedAt); keep local joinHidden if server older UI race
       setState(created.state)
       writeStored(created.state)
       setRoomStatus('live')
       setRoomError(null)
+      needsPinRef.current = false
+      setNeedsCallerPin(false)
       return created.code
     } catch (err) {
+      if (err instanceof CallerPinError) {
+        needsPinRef.current = true
+        setNeedsCallerPin(true)
+        setRoomStatus('error')
+        setRoomError(err.message)
+        return null
+      }
       setRoomStatus('error')
       setRoomError(err instanceof Error ? err.message : 'Could not open hall room')
       return null
@@ -238,6 +253,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     room,
     roomStatus,
     roomError,
+    needsCallerPin,
     callNext,
     undo,
     clear,

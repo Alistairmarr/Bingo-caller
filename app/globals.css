@@ -347,6 +347,52 @@ strong {
   overflow: hidden;
 }
 
+.caller-pin-panel {
+  max-width: 28rem;
+  margin: 0.5rem auto 0;
+  padding: 1.25rem 1.35rem;
+  border-radius: 12px;
+  border: 2px solid var(--wood-edge);
+  background: linear-gradient(165deg, #2a3528, #1a2218);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.caller-pin-panel h2 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--lamp-soft);
+}
+
+.caller-pin-panel > p {
+  margin: 0 0 1rem;
+  color: var(--ink-dim);
+}
+
+.caller-pin-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.caller-pin-input {
+  min-height: 64px;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-align: center;
+  border-radius: 10px;
+  border: 2px solid var(--slate);
+  background: rgba(12, 16, 14, 0.55);
+  color: var(--chalk);
+  padding: 0.5rem 0.85rem;
+}
+
+.caller-pin-input:focus {
+  border-color: var(--sandstone);
+  outline: none;
+}
+
 .caller--code-hidden {
   grid-template-rows: auto auto auto minmax(0, 1fr);
 }

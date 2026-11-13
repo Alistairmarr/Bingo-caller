@@ -26,10 +26,23 @@ npm start
 
 `cursor-app.json` requests a platform Postgres database for Cursor publish. Never commit `DATABASE_URL`.
 
+## Caller PIN
+
+Claiming / reclaiming Caller control requires a short PIN (`CALLER_PIN`). Display and QR stay open without it.
+
+- Local / smoke default when unset: `fete`
+- Published app: bind `CALLER_PIN` in Cursor secrets (Pad enters it once; token stays in sessionStorage)
+
+```bash
+# optional override for local
+CALLER_PIN=your-pin env -u DATABASE_URL npm start
+```
+
 ## Smoke test
 
 With the app running:
 
 ```bash
 npm run smoke
+npm run smoke:security
 ```

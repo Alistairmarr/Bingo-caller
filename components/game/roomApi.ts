@@ -3,6 +3,15 @@ import { DEFAULT_STATE, isValidRoomCode } from './types'
 
 export const CALLER_TOKEN_KEY = 'ancrum-fete-bingo-caller-token'
 
+export class CallerPinError extends Error {
+  readonly kind: 'pin_required' | 'bad_pin'
+  constructor(kind: 'pin_required' | 'bad_pin', message: string) {
+    super(message)
+    this.kind = kind
+    this.name = 'CallerPinError'
+  }
+}
+
 export function normalizeRoomCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4)
 }
@@ -34,20 +43,30 @@ async function parseJson(res: Response) {
 
 export async function createRoom(
   initial?: BingoState,
+  callerPin?: string,
 ): Promise<{ code: string; state: BingoState; callerToken: string }> {
   const state = initial ?? { ...DEFAULT_STATE, updatedAt: Date.now() }
   const existingToken = readCallerToken()
+  const pin = callerPin?.trim() || undefined
   const res = await fetch('/api/rooms', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(existingToken ? { 'X-Caller-Token': existingToken } : {}),
+      ...(pin ? { 'X-Caller-Pin': pin } : {}),
     },
-    body: JSON.stringify({ state, callerToken: existingToken ?? undefined }),
+    body: JSON.stringify({
+      state,
+      callerToken: existingToken ?? undefined,
+      callerPin: pin,
+    }),
   })
   const data = await parseJson(res)
-  if (res.status === 403 && data?.error === 'caller_locked') {
-    throw new Error('Caller already in use on another device — open Caller on that Pad')
+  if (data?.error === 'pin_required' || data?.error === 'bad_pin') {
+    throw new CallerPinError(
+      data.error,
+      data.error === 'bad_pin' ? 'Wrong Caller PIN' : 'Caller PIN required',
+    )
   }
   if (!res.ok || !data?.code || !data?.callerToken) {
     throw new Error(data?.error || 'Could not create room')
@@ -74,7 +93,7 @@ export async function pushRoom(code: string, state: BingoState): Promise<BingoSt
   const normalized = normalizeRoomCode(code)
   if (!isValidRoomCode(normalized)) throw new Error('Invalid room code')
   const token = readCallerToken()
-  if (!token) throw new Error('Caller token missing — reopen Caller')
+  if (!token) throw new Error('Caller token missing — enter Caller PIN again')
   const res = await fetch(`/api/rooms/${normalized}`, {
     method: 'PUT',
     headers: {
@@ -84,7 +103,7 @@ export async function pushRoom(code: string, state: BingoState): Promise<BingoSt
     body: JSON.stringify({ state, callerToken: token }),
   })
   const data = await parseJson(res)
-  if (res.status === 401) throw new Error('Caller control lost — reopen Caller on the Pad')
+  if (res.status === 401) throw new Error('Caller control lost — enter Caller PIN again')
   if (!res.ok || !data?.state) throw new Error(data?.error || 'Could not update room')
   return data.state as BingoState
 }
