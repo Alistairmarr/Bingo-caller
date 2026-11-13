@@ -635,12 +635,17 @@ strong {
 .room-qr-link {
   display: inline-flex;
   flex-shrink: 0;
-  border-radius: 12px;
-  /* Always white frame around B&W QR — no theme tint */
+  /* Square plate — no rounded corners (avoids grey AA on the B&W matte) */
+  border-radius: 0;
+  /* Opaque white plate — stay B&W on every hall colour theme */
   border: 4px solid #000;
-  background: #fff;
-  padding: 0.65rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  background: #ffffff !important;
+  padding: 0.85rem;
+  box-shadow: 0 0 0 10px #ffffff, 0 12px 28px rgba(0, 0, 0, 0.4);
+  isolation: isolate;
+  mix-blend-mode: normal;
+  color-scheme: only light;
+  filter: none !important;
 }
 
 .room-qr {
@@ -650,12 +655,15 @@ strong {
   height: auto;
   /* Keep camera-facing pixels pure — no CSS filters/tints */
   image-rendering: pixelated;
-  background: #fff;
+  background: #ffffff;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  opacity: 1 !important;
 }
 
 .room-qr--loading {
   border-radius: 0;
-  background: #fff;
+  background: #ffffff;
   border: 2px solid #000;
 }
 
@@ -1055,6 +1063,7 @@ strong {
   gap: clamp(0.65rem, 2vmin, 1.25rem);
   padding: clamp(0.75rem, 3vmin, 2rem);
   overflow: auto;
+  isolation: isolate;
   /* Fully covers board + last-called — no peek-through */
   background:
     radial-gradient(circle at 50% 40%, rgba(255, 212, 90, 0.18), transparent 55%),
