@@ -559,7 +559,7 @@ strong {
 }
 
 .room-qr-wrap--hall .room-qr {
-  width: min(42vh, 36vw, 520px);
+  width: min(32vh, 28vw, 380px);
   height: auto;
 }
 
@@ -834,15 +834,17 @@ strong {
 
 .display-side {
   display: grid;
-  grid-template-rows: minmax(0, 1.35fr) auto auto;
-  gap: 0.55rem;
+  /* Pack number + recent-5 + QR without an oversized hero band */
+  grid-template-rows: auto auto auto;
+  gap: 1rem;
   min-height: 0;
   min-width: 0;
-  align-content: stretch;
+  align-content: center;
+  justify-items: center;
 }
 
 .display--live:not(.display--with-qr) .display-side {
-  grid-template-rows: minmax(0, 1.35fr) auto;
+  grid-template-rows: auto auto;
 }
 
 .display-stage {
@@ -889,8 +891,8 @@ strong {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  /* Near pre-~2× size, slightly larger for hall; leaves room for recent-5 + QR */
-  font-size: clamp(7rem, 24vmin, 17rem);
+  /* Back near pre-~2× — hall-readable without crowding recent-5 / QR */
+  font-size: clamp(6.75rem, 22.5vmin, 16.5rem);
   line-height: 0.85;
   max-width: 100%;
   overflow: hidden;
@@ -899,12 +901,12 @@ strong {
 }
 
 .display--live .display-number {
-  font-size: clamp(7.5rem, 25vmin, 19rem);
+  font-size: clamp(7.25rem, 24.5vmin, 18.5rem);
 }
 
 @media (min-width: 1800px) {
   .display--live .display-number {
-    font-size: clamp(9.5rem, 27vmin, 23rem);
+    font-size: clamp(9.25rem, 26.5vmin, 22.5rem);
   }
 
   .display--live .ball {
@@ -912,8 +914,8 @@ strong {
   }
 
   .room-qr-wrap--hall .room-qr {
-    width: min(24vmin, 480px);
-    height: min(24vmin, 480px);
+    width: min(20vmin, 360px);
+    height: min(20vmin, 360px);
   }
 }
 
