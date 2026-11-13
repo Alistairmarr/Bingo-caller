@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
+import { RecentCalls } from './RecentCalls'
 import { RoomQr } from './RoomQr'
 import { normalizeRoomCode } from './game/roomApi'
 import { useBingoStore } from './game/store'
@@ -119,6 +120,7 @@ export function DisplayView() {
                 </p>
                 {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
               </div>
+              <RecentCalls called={state.called} limit={5} className="recent-calls--display" />
               {showQr ? (
                 <div className="display-qr-panel">
                   <RoomQr
@@ -132,7 +134,7 @@ export function DisplayView() {
             </aside>
           </div>
 
-          <DirtyGirty trigger={girty} />
+          <DirtyGirty trigger={girty} size="hall" />
         </>
       )}
     </main>
