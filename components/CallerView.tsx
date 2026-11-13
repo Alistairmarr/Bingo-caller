@@ -152,24 +152,30 @@ export function CallerView() {
           <h1 className="sr-only">Caller</h1>
         </div>
         <div className="caller-top-actions">
-          <div className="mode-switch" role="group" aria-label="Game mode">
-            <button
-              type="button"
-              className={state.mode === 90 ? 'mode-btn mode-btn--active' : 'mode-btn'}
-              onClick={() => requestMode(90)}
-              disabled={showPinGate}
-            >
-              90-ball
-            </button>
-            <button
-              type="button"
-              className={state.mode === 75 ? 'mode-btn mode-btn--active' : 'mode-btn'}
-              onClick={() => requestMode(75)}
-              disabled={showPinGate}
-            >
-              75-ball
-            </button>
-          </div>
+          {state.called.length === 0 ? (
+            <div className="mode-switch" role="group" aria-label="Game mode">
+              <button
+                type="button"
+                className={state.mode === 90 ? 'mode-btn mode-btn--active' : 'mode-btn'}
+                onClick={() => requestMode(90)}
+                disabled={showPinGate}
+              >
+                90-ball
+              </button>
+              <button
+                type="button"
+                className={state.mode === 75 ? 'mode-btn mode-btn--active' : 'mode-btn'}
+                onClick={() => requestMode(75)}
+                disabled={showPinGate}
+              >
+                75-ball
+              </button>
+            </div>
+          ) : (
+            <p className="caller-mode-locked" aria-label="Game mode">
+              {state.mode}-ball
+            </p>
+          )}
           <button
             type="button"
             className={showCallNames ? 'mode-btn mode-btn--active' : 'mode-btn'}
@@ -264,42 +270,43 @@ export function CallerView() {
                 {callName ? <p className="caller-call-name">{callName}</p> : null}
               </section>
 
-              <div className="caller-controls">
+              <div className="caller-secondary">
                 <button
                   type="button"
-                  className="btn btn-next caller-next"
-                  onClick={onNext}
-                  disabled={exhausted || nextLocked || alertActive}
+                  className="btn btn-secondary"
+                  onClick={undo}
+                  disabled={state.called.length === 0 || alertActive}
                   title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
                 >
-                  Next number
+                  Undo last
                 </button>
-                <div className="caller-secondary">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={undo}
-                    disabled={state.called.length === 0}
-                  >
-                    Undo last
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => setClearOpen(true)}
-                    disabled={state.called.length === 0}
-                  >
-                    Clear board
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setClearOpen(true)}
+                  disabled={state.called.length === 0}
+                >
+                  Clear board
+                </button>
               </div>
             </div>
 
-            <section className="caller-board-wrap" aria-label="Called numbers">
-              <div className="board-frame board-frame--compact board-frame--square">
-                <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
-              </div>
-            </section>
+            <div className="caller-board-column">
+              <button
+                type="button"
+                className="btn caller-next"
+                onClick={onNext}
+                disabled={exhausted || nextLocked || alertActive}
+                title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
+              >
+                Next number
+              </button>
+              <section className="caller-board-wrap" aria-label="Called numbers">
+                <div className="board-frame board-frame--compact board-frame--square">
+                  <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
+                </div>
+              </section>
+            </div>
           </div>
 
           {/* Bottom of pad — kept away from Next number to avoid fat-finger misses */}
