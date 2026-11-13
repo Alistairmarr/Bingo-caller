@@ -2356,10 +2356,34 @@ strong {
 
 .checker-side {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 0.85rem;
   min-height: 0;
   min-width: 0;
+}
+
+.checker-cue {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 2px solid #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.05rem, 2.6vmin, 1.45rem);
+  letter-spacing: 0.03em;
+  text-align: center;
+  line-height: 1.2;
+  animation: settle-in 0.35s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.checker-cue--bingo {
+  background: linear-gradient(160deg, #ffe14a, #f0b020);
+  color: #1a1200;
+}
+
+.checker-cue--full-house {
+  background: linear-gradient(160deg, #7dff7a, #22d15a);
+  color: #063818;
 }
 
 .checker-hero {

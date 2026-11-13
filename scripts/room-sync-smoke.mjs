@@ -172,10 +172,10 @@ if (await mobile.evaluate(() => performance.getEntriesByType('resource').some((r
   throw new Error('Mobile must not load hall alert sounds')
 }
 if (!(await display.locator('.hall-alert--bingo').count())) {
-  throw new Error('Bingo alert should stay until Caller dismisses')
+  throw new Error('Bingo alert should stay until dismissed or Next')
 }
-if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
-  throw new Error('Next number should be disabled while Bingo is showing')
+if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
+  throw new Error('Next number should stay enabled while Bingo is showing')
 }
 if (await caller.getByRole('button', { name: 'Undo last' }).isEnabled()) {
   throw new Error('Undo last should be disabled while Bingo is showing')
@@ -186,9 +186,6 @@ if (await caller.getByRole('button', { name: '90-ball' }).count()) {
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
-if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
-  throw new Error('Next number should re-enable after dismiss')
-}
 
 await caller.getByRole('button', { name: 'Full House' }).click()
 await display.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
@@ -197,11 +194,18 @@ await caller.waitForTimeout(800)
 if (!soundHits.some((u) => u.includes('/sounds/full-house.wav'))) {
   throw new Error('Display should load /sounds/full-house.wav when Full House is pressed')
 }
-if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
-  throw new Error('Next number should be disabled while Full House is showing')
+if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
+  throw new Error('Next number should stay enabled while Full House is showing')
 }
-await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
+// Next number dismisses the Full House announcement and advances
+const beforeNextDismiss = (await caller.locator('.caller-last').innerText()).trim()
+await caller.getByRole('button', { name: 'Next number' }).click()
+await caller.waitForTimeout(1200)
 await display.waitForSelector('.hall-alert--full-house', { state: 'detached', timeout: 8000 })
+const afterNextDismiss = (await caller.locator('.caller-last').innerText()).trim()
+if (afterNextDismiss === beforeNextDismiss) {
+  throw new Error('Next during Full House should call a new number')
+}
 
 // Checker pad: Caller QR → quiet called-numbers screen (no Bingo / Girty)
 await caller.getByRole('button', { name: 'Checker QR' }).click()
@@ -223,11 +227,11 @@ const displayNow = await displayLast()
 if (checkerLast !== displayNow) {
   throw new Error(`checker last mismatch: checker=${checkerLast} display=${displayNow}`)
 }
-// Fire Bingo again — Display gets the banner; Checker must stay quiet
+// Fire Bingo again — Display gets the banner; Checker gets a small cue only
 await caller.getByRole('button', { name: 'Bingo' }).click()
 await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
-await checker.waitForTimeout(900)
+await checker.waitForSelector('.checker-cue--bingo', { timeout: 8000 })
 if (await checker.locator('.hall-alert').count()) {
   throw new Error('Checker must not show Bingo / Full House banners')
 }
@@ -236,6 +240,7 @@ if (await checker.locator('.girty-overlay').count()) {
 }
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
+await checker.waitForSelector('.checker-cue', { state: 'detached', timeout: 8000 })
 
 // High-contrast Display toggle from Caller
 await caller.getByRole('button', { name: 'Contrast' }).click()

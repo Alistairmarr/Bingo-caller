@@ -11,7 +11,7 @@ import { lastCalled } from './game/types'
 
 /**
  * Checker pad — clear called-numbers view for verifying a bingo card.
- * No Bingo/Full House banners, no Dirty Girty.
+ * Small cue when Caller signals Bingo / Full House; no hall banners or Dirty Girty.
  */
 export function CheckerView() {
   const searchParams = useSearchParams()
@@ -20,6 +20,7 @@ export function CheckerView() {
   const autoTried = useRef(false)
   const last = lastCalled(state)
   const joined = !!room
+  const checkCue = state.hallAlert?.kind ?? null
 
   const calledSorted = useMemo(
     () => [...state.called].sort((a, b) => a - b),
@@ -99,6 +100,16 @@ export function CheckerView() {
           </section>
 
           <aside className="checker-side" aria-live="polite">
+            {checkCue ? (
+              <p
+                className={
+                  checkCue === 'bingo' ? 'checker-cue checker-cue--bingo' : 'checker-cue checker-cue--full-house'
+                }
+                role="status"
+              >
+                {checkCue === 'bingo' ? 'Checking for Bingo (one line)' : 'Checking for Full House'}
+              </p>
+            ) : null}
             <div className="checker-hero">
               <p className="checker-label">Last called</p>
               <p className={`checker-number ${last ? 'checker-number--pop' : ''}`} key={last ?? 'empty'}>
