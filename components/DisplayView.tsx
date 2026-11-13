@@ -14,7 +14,7 @@ import { lastCalled } from './game/types'
 export function DisplayView() {
   const searchParams = useSearchParams()
   const { state, room, roomStatus, roomError, joinRoom } = useBingoStore({ role: 'display' })
-  const [draft, setDraft] = useState('')
+  const [draft, setDraft] = useState('FETE')
   const autoTried = useRef(false)
   const last = lastCalled(state)
   const joined = !!room
@@ -29,9 +29,9 @@ export function DisplayView() {
   useEffect(() => {
     if (autoTried.current || joined) return
     const fromQuery = normalizeRoomCode(searchParams.get('code') ?? '')
-    if (fromQuery.length !== 4) return
+    const code = fromQuery.length === 4 ? fromQuery : 'FETE'
     autoTried.current = true
-    void joinRoom(fromQuery)
+    void joinRoom(code)
   }, [searchParams, joined, joinRoom])
 
   const onJoin = async (e: FormEvent) => {
@@ -42,7 +42,15 @@ export function DisplayView() {
   }
 
   return (
-    <main className={`display ${showQr ? 'display--with-qr' : ''}`}>
+    <main
+      className={[
+        'display',
+        joined ? 'display--live' : '',
+        showQr ? 'display--with-qr' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="display-atmosphere" aria-hidden />
       <header className="display-bar">
         <Link className="brand-quiet" href="/">
@@ -54,7 +62,7 @@ export function DisplayView() {
             <>
               <span className="display-mode">{state.mode}-ball</span>
               <span className="display-count">{state.called.length} called</span>
-              <span className="display-room">Room {room}</span>
+              <span className="display-room">{room}</span>
             </>
           ) : (
             <span className="display-count">Join hall room</span>
@@ -66,7 +74,7 @@ export function DisplayView() {
         <section className="join-panel">
           <h2>Enter the hall room code</h2>
           <p>
-            Open Caller on the games-master tablet first — code is usually <strong>FETE</strong>, or scan the QR.
+            Open Caller on the games-master tablet first — code is usually <strong>FETE</strong>.
           </p>
           <form className="join-form" onSubmit={(e) => void onJoin(e)}>
             <input
@@ -87,9 +95,6 @@ export function DisplayView() {
           </form>
           {roomStatus === 'connecting' && <p className="join-hint">Joining room…</p>}
           {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
-          <p className="join-hint">
-            Same browser demo: open Caller in another tab — local sync still works without joining.
-          </p>
         </section>
       ) : (
         <>
@@ -97,7 +102,7 @@ export function DisplayView() {
             <div className="display-hero">
               <p className="display-label">
                 Last called
-                {roomStatus === 'live' ? ' · live' : roomStatus === 'connecting' ? ' · linking…' : ''}
+                {roomStatus === 'live' ? '' : roomStatus === 'connecting' ? ' · linking…' : ''}
               </p>
               <p
                 className={`display-number ${last ? 'display-number--pop' : ''} ${girty ? 'display-number--girty' : ''}`}
@@ -109,7 +114,12 @@ export function DisplayView() {
             </div>
             {showQr ? (
               <div className="display-qr-panel">
-                <RoomQr code={room!} size={480} className="room-qr-wrap--hall" label="Scan to follow along" />
+                <RoomQr
+                  code={room!}
+                  size={520}
+                  className="room-qr-wrap--hall"
+                  label="Scan for phone follow-along"
+                />
               </div>
             ) : null}
           </section>

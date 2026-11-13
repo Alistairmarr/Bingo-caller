@@ -19,8 +19,8 @@ export function HomeView() {
           Ancrum Fete Committee · Scottish Borders
         </p>
         <p className="brand-mark">Ancrum Fete Bingo</p>
-        <h1>Bright hall night · Pad Caller · TV Display</h1>
-        <p className="lede">Pick a view — one hall room, big QR, numbers the whole green can see.</p>
+        <h1>Pad Caller · TV Display · phone follow-along</h1>
+        <p className="lede">Caller on the Pad, big board on the TV — phones scan the TV QR.</p>
       </header>
 
       <nav className="home-actions" aria-label="Views">
@@ -30,14 +30,14 @@ export function HomeView() {
           <span className="launch-hint">Unlock with PIN · Next · Undo · Clear</span>
         </Link>
         <Link className="launch launch-display" href="/display">
-          <span className="launch-kicker">TV · hall screen</span>
+          <span className="launch-kicker">TV · 4K hall screen</span>
           <span className="launch-title">Display</span>
-          <span className="launch-hint">Join with the room code</span>
+          <span className="launch-hint">Huge number · board · phone QR</span>
         </Link>
       </nav>
 
       <p className="home-footnote">
-        Same browser / Try Live: open both tabs here to sync locally without a room.
+        Phones: scan the QR on Display (opens Mobile). Same-browser demo: open Caller + Display tabs here.
       </p>
     </main>
   )
