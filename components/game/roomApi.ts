@@ -9,7 +9,7 @@ export function normalizeRoomCode(raw: string): string {
 
 export function readCallerToken(): string | null {
   try {
-    return sessionStorage.getItem(CALLER_TOKEN_KEY)
+    return sessionStorage.getItem(CALLER_TOKEN_KEY) || localStorage.getItem(CALLER_TOKEN_KEY)
   } catch {
     return null
   }
@@ -18,6 +18,7 @@ export function readCallerToken(): string | null {
 export function writeCallerToken(token: string) {
   try {
     sessionStorage.setItem(CALLER_TOKEN_KEY, token)
+    localStorage.setItem(CALLER_TOKEN_KEY, token)
   } catch {
     /* ignore */
   }
@@ -45,6 +46,9 @@ export async function createRoom(
     body: JSON.stringify({ state, callerToken: existingToken ?? undefined }),
   })
   const data = await parseJson(res)
+  if (res.status === 403 && data?.error === 'caller_locked') {
+    throw new Error('Caller already in use on another device — open Caller on that Pad')
+  }
   if (!res.ok || !data?.code || !data?.callerToken) {
     throw new Error(data?.error || 'Could not create room')
   }

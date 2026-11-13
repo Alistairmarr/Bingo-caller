@@ -8,15 +8,40 @@ async function json(res) {
   }
 }
 
-// Open hall room as Caller
+// Open hall room as Caller (needs unlocked room / fresh DB, or prior token)
 const open = await fetch(`${base}/api/rooms`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ state: { mode: 90, called: [], joinHidden: false } }),
 })
 const opened = await json(open)
+if (open.status === 403) {
+  throw new Error('hall Caller already locked — restart the app server (clears local PGlite) and retry')
+}
 if (!open.ok || !opened?.callerToken) throw new Error('open failed')
 const token = opened.callerToken
+
+// Stranger must not receive a new Caller token
+const steal = await fetch(`${base}/api/rooms`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ state: { mode: 90, called: [9], joinHidden: true } }),
+})
+const stolen = await json(steal)
+if (steal.status !== 403) throw new Error(`expected 403 on anonymous reclaim, got ${steal.status}`)
+if (stolen?.callerToken) throw new Error('anonymous POST returned a callerToken')
+if (stolen?.error !== 'caller_locked') throw new Error(`expected caller_locked, got ${stolen?.error}`)
+
+// Real Caller can reopen with the existing token
+const reopen = await fetch(`${base}/api/rooms`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-Caller-Token': token },
+  body: JSON.stringify({ state: { mode: 90, called: [], joinHidden: false }, callerToken: token }),
+})
+const reopened = await json(reopen)
+if (!reopen.ok || reopened?.callerToken !== token) {
+  throw new Error('Caller reopen with valid token failed')
+}
 
 // Unauthorized PUT must fail
 const bad = await fetch(`${base}/api/rooms/FETE`, {

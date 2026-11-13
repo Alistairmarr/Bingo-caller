@@ -13,6 +13,10 @@ export interface BingoState {
   updatedAt: number
 }
 
+export type OpenHallResult =
+  | { ok: true; code: string; state: BingoState; callerToken: string }
+  | { ok: false; error: 'caller_locked'; code: string; state: BingoState }
+
 export function isValidCode(code: string): boolean {
   return typeof code === 'string' && /^[A-Z2-9]{4}$/.test(code)
 }
@@ -85,22 +89,27 @@ async function loadHallRow(): Promise<RoomRow | null> {
 }
 
 /**
- * Get-or-create the hall room and return a caller token.
- * Valid existing token is reused; otherwise a new token is minted (Caller reclaim).
+ * Get-or-create the hall room.
+ * Mint only when no caller token exists yet, or when the presented token matches.
+ * Never rotate/overwrite for an anonymous visitor.
  */
 export async function getOrCreateHallRoom(
   state: unknown,
   presentedToken: string | null,
-): Promise<{ code: string; state: BingoState; callerToken: string }> {
+): Promise<OpenHallResult> {
   const existing = await loadHallRow()
   if (existing) {
     const game = rowToState(existing)
-    if (tokensMatch(existing.caller_token, presentedToken)) {
-      return { code: HALL_ROOM_CODE, state: game, callerToken: existing.caller_token! }
+    const current = existing.caller_token?.trim() || ''
+    if (!current) {
+      const callerToken = mintCallerToken()
+      await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerToken])
+      return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken }
     }
-    const callerToken = mintCallerToken()
-    await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerToken])
-    return { code: HALL_ROOM_CODE, state: game, callerToken }
+    if (tokensMatch(current, presentedToken)) {
+      return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: current }
+    }
+    return { ok: false, error: 'caller_locked', code: HALL_ROOM_CODE, state: game }
   }
 
   const fields = normalizeState(state) || { mode: 90 as BingoMode, called: [], joinHidden: false }
@@ -112,6 +121,7 @@ export async function getOrCreateHallRoom(
       [HALL_ROOM_CODE, fields.mode, JSON.stringify(fields.called), fields.joinHidden, callerToken, updatedAt],
     )
     return {
+      ok: true,
       code: HALL_ROOM_CODE,
       state: { ...fields, updatedAt },
       callerToken,
@@ -119,9 +129,17 @@ export async function getOrCreateHallRoom(
   } catch {
     const again = await loadHallRow()
     if (!again) throw new Error('Could not open hall room')
-    const callerTokenRetry = mintCallerToken()
-    await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, callerTokenRetry])
-    return { code: HALL_ROOM_CODE, state: rowToState(again), callerToken: callerTokenRetry }
+    const game = rowToState(again)
+    const current = again.caller_token?.trim() || ''
+    if (!current) {
+      const minted = mintCallerToken()
+      await sql(`update rooms set caller_token = $2 where code = $1`, [HALL_ROOM_CODE, minted])
+      return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: minted }
+    }
+    if (tokensMatch(current, presentedToken)) {
+      return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: current }
+    }
+    return { ok: false, error: 'caller_locked', code: HALL_ROOM_CODE, state: game }
   }
 }
 

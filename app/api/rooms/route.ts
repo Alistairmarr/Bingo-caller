@@ -4,7 +4,7 @@ import { getOrCreateHallRoom } from '@/lib/rooms'
 
 export const runtime = 'nodejs'
 
-/** Opens the single Ancrum hall room (get-or-create) and returns a caller token. */
+/** Opens the single Ancrum hall room (get-or-create). Caller token only if unlocked / proven. */
 export async function POST(request: Request) {
   const limited = rateLimit(request, 'rooms-write')
   if (limited) return limited
@@ -19,7 +19,17 @@ export async function POST(request: Request) {
 
   try {
     const room = await getOrCreateHallRoom(body.state, presented)
-    return NextResponse.json(room, { status: 201 })
+    if (!room.ok) {
+      // Public Display can still GET; do not mint/rotate for strangers.
+      return NextResponse.json(
+        { error: room.error, code: room.code, state: room.state },
+        { status: 403 },
+      )
+    }
+    return NextResponse.json(
+      { code: room.code, state: room.state, callerToken: room.callerToken },
+      { status: 201 },
+    )
   } catch (error) {
     const message = error instanceof Error ? error.message : 'create_failed'
     return NextResponse.json({ error: message }, { status: 500 })
