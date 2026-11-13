@@ -201,18 +201,18 @@ await display.waitForSelector('.display--contrast', { state: 'detached', timeout
 // New game picks a colour, clears the board, reveals QR + colour for prep
 await caller.getByRole('button', { name: 'New game' }).click()
 await caller.waitForSelector('.dialog--new-game')
-await caller.locator('.theme-swatch--blue').click()
+await caller.locator('.theme-swatch--pink').click()
 await caller.getByRole('button', { name: 'Start game' }).click()
 await caller.waitForSelector('.dialog--new-game', { state: 'detached', timeout: 5000 })
 await caller.waitForFunction(() => {
   const el = document.querySelector('.caller-last')
   return el && el.textContent && el.textContent.trim() === '—'
 })
-await display.waitForSelector('.display.theme-blue', { timeout: 8000 })
+await display.waitForSelector('.display.theme-pink', { timeout: 8000 })
 await display.waitForSelector('.display-qr-overlay', { timeout: 8000 })
-await display.waitForSelector('.display-next-game-colour--blue', { timeout: 8000 })
-await mobile.waitForSelector('.mobile.theme-blue', { timeout: 8000 })
-await mobile.waitForSelector('.mobile-prep-colour--blue', { timeout: 8000 })
+await display.waitForSelector('.display-next-game-colour--pink', { timeout: 8000 })
+await mobile.waitForSelector('.mobile.theme-pink', { timeout: 8000 })
+await mobile.waitForSelector('.mobile-prep-colour--pink', { timeout: 8000 })
 const afterNew = await displayLast()
 if (afterNew !== '—') throw new Error(`new game should clear Display number, got ${afterNew}`)
 
@@ -224,7 +224,7 @@ console.log('room-sync-smoke ok', {
   mobile: true,
   alerts: true,
   contrast: true,
-  newGame: 'blue',
+  newGame: 'pink',
   newGamePrep: true,
   nextDebounce: true,
   displaySounds: true,
