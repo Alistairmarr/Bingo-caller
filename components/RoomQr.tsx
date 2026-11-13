@@ -27,8 +27,9 @@ export function RoomQr({
     const url = mobileJoinUrl(code)
     void QRCode.toDataURL(url, {
       width: Math.max(size * 2, 512),
-      margin: 2,
-      // Always pure B&W — easier for phone cameras across a hall
+      margin: 3,
+      type: 'image/png',
+      // Always pure black modules on pure white — never theme-tinted
       color: { dark: '#000000', light: '#ffffff' },
       errorCorrectionLevel: 'M',
     }).then((next) => {
@@ -50,6 +51,8 @@ export function RoomQr({
             width={size}
             height={size}
             alt={`QR code to open mobile follow-along for room ${code}`}
+            style={{ backgroundColor: '#ffffff' }}
+            draggable={false}
           />
         </a>
       ) : (
