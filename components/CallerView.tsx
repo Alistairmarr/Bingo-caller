@@ -217,7 +217,7 @@ export function CallerView() {
           </div>
 
           <section className="caller-board-wrap" aria-label="Called numbers">
-            <div className="board-frame board-frame--compact">
+            <div className="board-frame board-frame--compact board-frame--square">
               <NumberBoard mode={state.mode} called={state.called} highlight={last} compact />
             </div>
           </section>

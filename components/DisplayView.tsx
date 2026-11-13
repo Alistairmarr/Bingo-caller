@@ -98,37 +98,39 @@ export function DisplayView() {
         </section>
       ) : (
         <>
-          <section className="display-stage" aria-live="polite" aria-atomic="true">
-            <div className="display-hero">
-              <p className="display-label">
-                Last called
-                {roomStatus === 'live' ? '' : roomStatus === 'connecting' ? ' · linking…' : ''}
-              </p>
-              <p
-                className={`display-number ${last ? 'display-number--pop' : ''} ${girty ? 'display-number--girty' : ''}`}
-                key={last ?? 'empty'}
-              >
-                {last ?? '—'}
-              </p>
-              {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
-            </div>
-            {showQr ? (
-              <div className="display-qr-panel">
-                <RoomQr
-                  code={room!}
-                  size={520}
-                  className="room-qr-wrap--hall"
-                  label="Scan for phone follow-along"
-                />
+          <div className="display-live-body">
+            <section className="display-board-wrap" aria-label="Called numbers board">
+              <div className="board-frame board-frame--square">
+                <NumberBoard mode={state.mode} called={state.called} highlight={last} />
               </div>
-            ) : null}
-          </section>
+            </section>
 
-          <section className="display-board-wrap" aria-label="Called numbers board">
-            <div className="board-frame">
-              <NumberBoard mode={state.mode} called={state.called} highlight={last} />
-            </div>
-          </section>
+            <aside className="display-side" aria-live="polite" aria-atomic="true">
+              <div className="display-hero">
+                <p className="display-label">
+                  Last called
+                  {roomStatus === 'live' ? '' : roomStatus === 'connecting' ? ' · linking…' : ''}
+                </p>
+                <p
+                  className={`display-number ${last ? 'display-number--pop' : ''} ${girty ? 'display-number--girty' : ''}`}
+                  key={last ?? 'empty'}
+                >
+                  {last ?? '—'}
+                </p>
+                {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
+              </div>
+              {showQr ? (
+                <div className="display-qr-panel">
+                  <RoomQr
+                    code={room!}
+                    size={480}
+                    className="room-qr-wrap--hall"
+                    label="Scan for phone follow-along"
+                  />
+                </div>
+              ) : null}
+            </aside>
+          </div>
 
           <DirtyGirty trigger={girty} />
         </>
