@@ -203,6 +203,40 @@ if (await caller.getByRole('button', { name: 'Next number' }).isEnabled()) {
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--full-house', { state: 'detached', timeout: 8000 })
 
+// Checker pad: Caller QR → quiet called-numbers screen (no Bingo / Girty)
+await caller.getByRole('button', { name: 'Checker QR' }).click()
+await caller.waitForSelector('.dialog--checker-qr .room-qr', { timeout: 8000 })
+const checkerHref = await caller.locator('.dialog--checker-qr .room-qr-link').getAttribute('href')
+if (!checkerHref || !checkerHref.includes('/checker?code=')) {
+  throw new Error(`Checker QR should encode /checker?code=, got ${checkerHref}`)
+}
+await caller.getByRole('button', { name: 'Done' }).click()
+await caller.waitForSelector('.dialog--checker-qr', { state: 'detached', timeout: 5000 })
+
+const checkerCtx = await browser.newContext({ viewport: { width: 1100, height: 800 } })
+const checker = await checkerCtx.newPage()
+await checker.goto(`${base}/checker?code=${code}`)
+await checker.waitForSelector('.checker--live .checker-number', { timeout: 15000 })
+await checker.waitForSelector('.checker-called-chips .checker-chip', { timeout: 8000 })
+const checkerLast = ((await checker.locator('.checker-number').textContent()) || '').trim()
+const displayNow = await displayLast()
+if (checkerLast !== displayNow) {
+  throw new Error(`checker last mismatch: checker=${checkerLast} display=${displayNow}`)
+}
+// Fire Bingo again — Display gets the banner; Checker must stay quiet
+await caller.getByRole('button', { name: 'Bingo' }).click()
+await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await checker.waitForTimeout(900)
+if (await checker.locator('.hall-alert').count()) {
+  throw new Error('Checker must not show Bingo / Full House banners')
+}
+if (await checker.locator('.girty-overlay').count()) {
+  throw new Error('Checker must not show Dirty Girty')
+}
+await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
+await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
+
 // High-contrast Display toggle from Caller
 await caller.getByRole('button', { name: 'Contrast' }).click()
 await display.waitForSelector('.display--contrast', { timeout: 8000 })
@@ -239,6 +273,7 @@ console.log('room-sync-smoke ok', {
   third,
   mobile: true,
   alerts: true,
+  checker: true,
   contrast: true,
   newGame: 'pink',
   newGamePrep: true,
