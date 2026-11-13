@@ -6,7 +6,6 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NumberBoard } from './NumberBoard'
-import { RoomQr } from './RoomQr'
 import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
 import { lastCalled, maxBall, type BingoMode } from './game/types'
@@ -133,7 +132,7 @@ export function CallerView() {
       {showPinGate ? (
         <section className="caller-pin-panel" aria-live="polite">
           <h2>Caller PIN</h2>
-          <p>Enter the hall Caller PIN once. Display and QR stay open without it.</p>
+          <p>Enter the hall Caller PIN once. Display and phone QR stay open without it.</p>
           <form className="caller-pin-form" onSubmit={(e) => void submitPin(e)}>
             <input
               className="caller-pin-input"
@@ -155,19 +154,18 @@ export function CallerView() {
       ) : null}
 
       {!showPinGate && !codeHidden ? (
-        <section className="room-banner" aria-live="polite">
+        <section className="room-banner room-banner--compact" aria-live="polite">
           <div className="room-banner-main">
             <div>
-              <p className="room-label">Hall room · TV code · phone QR</p>
+              <p className="room-label">Hall room · TV joins with code · phone QR is on Display</p>
               <p className="room-code">{room ?? '····'}</p>
               <p className="room-status">
-                {roomStatus === 'live' && 'One hall room — Display & phones join here'}
+                {roomStatus === 'live' && 'Caller pad — QR lives on the TV Display for phones'}
                 {roomStatus === 'connecting' && 'Opening hall room…'}
                 {roomStatus === 'error' && (roomError || 'Room sync issue — local tab sync still works')}
                 {roomStatus === 'idle' && 'Preparing room…'}
               </p>
             </div>
-            {room ? <RoomQr code={room} size={220} className="room-qr-wrap--caller" /> : null}
           </div>
           <div className="room-actions">
             <button type="button" className="btn btn-secondary" onClick={() => void copyCode()} disabled={!room}>

@@ -33,29 +33,55 @@ await caller.waitForFunction(() => {
 const code = (await caller.locator('.room-code').innerText()).trim()
 if (code !== 'FETE') throw new Error(`expected single hall code FETE, got: ${code}`)
 
+// Caller must not show a QR — phones scan Display
+if (await caller.locator('.room-qr').count()) {
+  throw new Error('Caller still shows a QR — QR belongs on Display only')
+}
+
 await display.goto(`${base}/display`)
-await display.fill('.join-input', code)
-await display.getByRole('button', { name: 'Join display' }).click()
 await display.waitForSelector('.display-number')
+await display.waitForSelector('.room-qr')
+
+const mobileCtx = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  isMobile: true,
+  hasTouch: true,
+})
+const mobile = await mobileCtx.newPage()
+await mobile.goto(`${base}/mobile?code=${code}`)
+await mobile.waitForSelector('.mobile-number')
 
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(900)
 const callerNum = (await caller.locator('.caller-last').innerText()).trim()
 const displayNum = (await display.locator('.display-number').innerText()).trim()
+const mobileNum = (await mobile.locator('.mobile-number').innerText()).trim()
 if (callerNum !== displayNum) {
   throw new Error(`room sync fail after next: caller=${callerNum} display=${displayNum}`)
+}
+if (callerNum !== mobileNum) {
+  throw new Error(`mobile sync fail after next: caller=${callerNum} mobile=${mobileNum}`)
 }
 
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(900)
 const second = (await caller.locator('.caller-last').innerText()).trim()
 const secondDisplay = (await display.locator('.display-number').innerText()).trim()
+const secondMobile = (await mobile.locator('.mobile-number').innerText()).trim()
 if (second !== secondDisplay) throw new Error('second call not room-synced')
+if (second !== secondMobile) throw new Error('second call not mobile-synced')
 
 await caller.getByRole('button', { name: 'Undo last' }).click()
 await caller.waitForTimeout(900)
 const afterUndo = (await display.locator('.display-number').innerText()).trim()
 if (afterUndo !== callerNum) throw new Error(`undo not room-synced: ${afterUndo} expected ${callerNum}`)
 
-console.log('room-sync-smoke ok', { code, first: callerNum, second })
+// Hide code on Caller hides Display QR
+await caller.getByRole('button', { name: 'Hide code' }).click()
+await caller.waitForTimeout(700)
+if (await display.locator('.room-qr').count()) {
+  throw new Error('Hide code should remove Display QR')
+}
+
+console.log('room-sync-smoke ok', { code, first: callerNum, second, mobile: true })
 await browser.close()
