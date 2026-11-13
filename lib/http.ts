@@ -8,7 +8,7 @@ const MAX_BUCKETS = 16
  * Never keyed by client IP / forwarded headers.
  */
 const BUCKET_LIMITS: Record<string, number> = {
-  'rooms-read': 6_000, // Display phones poll ~1–2/s
+  'rooms-read': 30_000, // Display phones poll ~5/s with ETag 304s; hall can have many devices
   'rooms-claim': 60, // POST mint / reclaim (PIN)
   'rooms-write': 240, // Caller PUT updates
 }
