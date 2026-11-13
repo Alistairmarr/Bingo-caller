@@ -21,11 +21,17 @@ const pinInput = caller.locator('.caller-pin-input')
 if (await pinInput.count()) {
   await pinInput.fill(pin)
   await caller.getByRole('button', { name: 'Unlock Caller' }).click()
+  await caller.waitForSelector('.caller-pin-input', { state: 'detached' })
 }
 // If a prior test left joinHidden on, reveal the code banner
 const show = caller.locator('.caller-show-code')
-if (await show.count()) await show.click()
-await caller.waitForSelector('.room-code')
+await Promise.race([
+  caller.waitForSelector('.room-code', { timeout: 15000 }),
+  show.waitFor({ state: 'visible', timeout: 15000 }).then(async () => {
+    await show.click()
+    await caller.waitForSelector('.room-code')
+  }),
+])
 await caller.waitForFunction(() => {
   const el = document.querySelector('.room-code')
   return el && el.textContent && !el.textContent.includes('·')
@@ -39,8 +45,9 @@ if (await caller.locator('.room-qr').count()) {
 }
 
 await display.goto(`${base}/display`)
-await display.waitForSelector('.display-number')
-await display.waitForSelector('.room-qr')
+// QR overlay covers the board; number stays in DOM but is not "visible" to Playwright
+await display.waitForSelector('.display-number', { state: 'attached' })
+await display.waitForSelector('.display-qr-overlay .room-qr')
 
 const mobileCtx = await browser.newContext({
   viewport: { width: 390, height: 844 },
@@ -51,10 +58,13 @@ const mobile = await mobileCtx.newPage()
 await mobile.goto(`${base}/mobile?code=${code}`)
 await mobile.waitForSelector('.mobile-number')
 
+const displayLast = async () =>
+  ((await display.locator('.display-number').textContent()) || '').trim()
+
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(900)
 const callerNum = (await caller.locator('.caller-last').innerText()).trim()
-const displayNum = (await display.locator('.display-number').innerText()).trim()
+const displayNum = await displayLast()
 const mobileNum = (await mobile.locator('.mobile-number').innerText()).trim()
 if (callerNum !== displayNum) {
   throw new Error(`room sync fail after next: caller=${callerNum} display=${displayNum}`)
@@ -66,22 +76,19 @@ if (callerNum !== mobileNum) {
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(900)
 const second = (await caller.locator('.caller-last').innerText()).trim()
-const secondDisplay = (await display.locator('.display-number').innerText()).trim()
+const secondDisplay = await displayLast()
 const secondMobile = (await mobile.locator('.mobile-number').innerText()).trim()
 if (second !== secondDisplay) throw new Error('second call not room-synced')
 if (second !== secondMobile) throw new Error('second call not mobile-synced')
 
 await caller.getByRole('button', { name: 'Undo last' }).click()
 await caller.waitForTimeout(900)
-const afterUndo = (await display.locator('.display-number').innerText()).trim()
+const afterUndo = await displayLast()
 if (afterUndo !== callerNum) throw new Error(`undo not room-synced: ${afterUndo} expected ${callerNum}`)
 
-// Hide code on Caller hides Display QR
+// Hide code on Caller hides Display QR overlay
 await caller.getByRole('button', { name: 'Hide code' }).click()
-await caller.waitForTimeout(700)
-if (await display.locator('.room-qr').count()) {
-  throw new Error('Hide code should remove Display QR')
-}
+await display.waitForSelector('.display-qr-overlay', { state: 'detached', timeout: 5000 })
 
 console.log('room-sync-smoke ok', { code, first: callerNum, second, mobile: true })
 await browser.close()
