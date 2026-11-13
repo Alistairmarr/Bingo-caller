@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { clearCalled, nextNumber, setHallAlert, setJoinHidden, setMode, undoLast } from './logic'
+import { clearCalled, clearHallAlert, nextNumber, setHallAlert, setJoinHidden, setMode, undoLast } from './logic'
 import { CallerPinError, createRoom, fetchRoom, pushRoom } from './roomApi'
 import {
   CHANNEL_NAME,
@@ -279,6 +279,10 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     [publish],
   )
 
+  const dismissHallAlert = useCallback(() => {
+    void publish(clearHallAlert(stateRef.current))
+  }, [publish])
+
   return {
     state,
     room,
@@ -291,6 +295,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     changeMode,
     changeJoinHidden,
     signalHallAlert,
+    dismissHallAlert,
     ensureCallerRoom,
     joinRoom,
     publishLocal,

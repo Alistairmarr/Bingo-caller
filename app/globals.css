@@ -397,8 +397,8 @@ strong {
   min-height: 100dvh;
   max-height: 100dvh;
   display: grid;
-  /* top · banner · hero · controls · bingo/full-house · board */
-  grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
+  /* top · banner · hero · controls · board · bingo/full-house (bottom, away from Next) */
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
   gap: 0.5rem;
   padding: 0.65rem 0.85rem 0.75rem;
   max-width: 1200px;
@@ -407,8 +407,8 @@ strong {
 }
 
 .caller.caller--code-hidden {
-  /* top · hero · controls · bingo/full-house · board */
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  /* top · hero · controls · board · bingo/full-house */
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
 }
 
 .caller-pin-panel {
@@ -458,7 +458,7 @@ strong {
 }
 
 .caller--code-hidden {
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
 }
 
 .caller-top {
@@ -976,14 +976,39 @@ strong {
 .caller-alerts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
-  align-self: start;
+  gap: 0.75rem;
+  align-self: stretch;
+  padding-top: 0.35rem;
+  border-top: 2px solid rgba(255, 248, 234, 0.14);
+}
+
+.caller-alert-live {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 2px solid var(--wood-edge);
+  background: rgba(12, 22, 16, 0.55);
+}
+
+.caller-alert-live-text {
+  margin: 0;
+  font-weight: 700;
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+  color: var(--lamp-soft);
+}
+
+.caller-alert-dismiss {
+  min-height: 3rem;
+  white-space: nowrap;
 }
 
 .btn-bingo,
 .btn-full-house {
-  min-height: 3rem;
-  max-height: 3.4rem;
+  min-height: 3.25rem;
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: 0.04em;

@@ -72,6 +72,15 @@ export function setHallAlert(state: BingoState, kind: HallAlertKind): BingoState
   }
 }
 
+export function clearHallAlert(state: BingoState): BingoState {
+  if (!state.hallAlert) return state
+  return {
+    ...state,
+    hallAlert: null,
+    updatedAt: Date.now(),
+  }
+}
+
 export function remainingCount(state: BingoState): number {
   return maxBall(state.mode) - state.called.length
 }
