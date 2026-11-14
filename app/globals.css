@@ -1326,20 +1326,43 @@ strong {
   z-index: 70;
   display: grid;
   place-content: center;
-  gap: 0.35rem;
+  justify-items: center;
+  gap: 0.45rem;
   padding: 1.25rem;
   background: #0a1810;
-  animation: hall-alert-in 0.28s ease-out;
+  animation: hall-alert-in 0.32s ease-out;
   pointer-events: none;
   text-align: center;
 }
 
 .hall-alert--bingo {
-  background: linear-gradient(160deg, #3a2208 0%, #1a1208 55%, #0a1810 100%);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 200, 60, 0.28), transparent 55%),
+    linear-gradient(160deg, #5a2808 0%, #2a1408 45%, #0a1810 100%);
 }
 
 .hall-alert--full-house {
-  background: linear-gradient(160deg, #0a3d24 0%, #08301c 55%, #0a1810 100%);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(80, 255, 140, 0.22), transparent 55%),
+    linear-gradient(160deg, #0a5c34 0%, #084028 45%, #0a1810 100%);
+}
+
+.hall-alert-kicker {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.1rem, 3.5vw, 1.85rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lamp);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+  animation: hall-alert-pop 0.5s cubic-bezier(0.2, 1.35, 0.4, 1);
+}
+
+.hall-alert--hall .hall-alert-kicker {
+  font-size: clamp(1.6rem, 4vmin, 3rem);
 }
 
 .hall-alert-title {
@@ -1348,32 +1371,39 @@ strong {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(3rem, 14vw, 5.5rem);
-  line-height: 0.95;
+  font-size: clamp(3.6rem, 16vw, 6.5rem);
+  line-height: 0.9;
   letter-spacing: 0.02em;
   color: var(--lamp-soft);
-  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.45), 0 0 36px rgba(255, 212, 90, 0.4);
-  animation: hall-alert-pop 0.55s cubic-bezier(0.2, 1.35, 0.4, 1);
+  text-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(255, 212, 90, 0.55),
+    0 0 72px rgba(255, 180, 40, 0.35);
+  animation: hall-alert-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
 .hall-alert--hall .hall-alert-title {
-  font-size: clamp(5rem, 18vmin, 12rem);
-  text-shadow: 0 8px 0 rgba(0, 0, 0, 0.45), 0 0 56px rgba(255, 212, 90, 0.5);
+  font-size: clamp(6.5rem, 24vmin, 16rem);
+  text-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(255, 212, 90, 0.55),
+    0 0 100px rgba(255, 180, 40, 0.4);
 }
 
 .hall-alert-sub {
   position: relative;
   z-index: 2;
-  margin: 0;
-  font-size: clamp(1rem, 3.5vw, 1.6rem);
+  margin: 0.15rem 0 0;
+  font-size: clamp(1.05rem, 3.8vw, 1.85rem);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 248, 234, 0.9);
+  color: rgba(255, 248, 234, 0.95);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .hall-alert--hall .hall-alert-sub {
-  font-size: clamp(1.2rem, 3.2vmin, 2.2rem);
+  font-size: clamp(1.45rem, 4vmin, 2.75rem);
 }
 
 .hall-alert-confetti {
@@ -1385,12 +1415,13 @@ strong {
 
 .hall-alert-piece {
   position: absolute;
-  top: -12%;
+  top: -14%;
   left: var(--x);
-  width: 0.7rem;
-  height: 1.1rem;
+  width: var(--size, 0.75rem);
+  height: calc(var(--size, 0.75rem) * 1.55);
   border-radius: 2px;
-  background: hsl(var(--hue) 90% 58%);
+  background: hsl(var(--hue) 92% 58%);
+  box-shadow: 0 0 10px hsla(var(--hue), 90%, 60%, 0.45);
   transform: rotate(var(--rot));
   animation: girty-fall var(--dur) linear var(--delay) infinite;
 }

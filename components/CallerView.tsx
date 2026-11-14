@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NewGameDialog } from './NewGameDialog'
@@ -32,6 +33,7 @@ export function CallerView() {
   } = useBingoStore({ role: 'caller' })
   const [newGameOpen, setNewGameOpen] = useState(false)
   const [checkerQrOpen, setCheckerQrOpen] = useState(false)
+  const [undoOpen, setUndoOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [nextLocked, setNextLocked] = useState(false)
   const nextLockRef = useRef(false)
@@ -280,7 +282,7 @@ export function CallerView() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={undo}
+                  onClick={() => setUndoOpen(true)}
                   disabled={state.called.length === 0 || alertActive}
                   title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
                 >
@@ -348,6 +350,20 @@ export function CallerView() {
       ) : null}
 
       <DirtyGirty trigger={girty} />
+
+      <ConfirmDialog
+        open={undoOpen && last !== null}
+        title={last !== null ? `Undo ${last}?` : 'Undo last?'}
+        body="Takes the last called number off the board on TV and phones. Use if you called by mistake."
+        confirmLabel={last !== null ? `Undo ${last}` : 'Undo'}
+        cancelLabel="Keep it"
+        danger
+        onCancel={() => setUndoOpen(false)}
+        onConfirm={() => {
+          undo()
+          setUndoOpen(false)
+        }}
+      />
 
       <NewGameDialog
         open={newGameOpen}

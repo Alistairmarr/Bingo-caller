@@ -16,7 +16,8 @@ export function HallAlertBanner({
   if (!alert) return null
 
   const title = alert.kind === 'bingo' ? 'BINGO!' : 'FULL HOUSE!'
-  const sub = alert.kind === 'bingo' ? 'Line claimed' : 'House claimed'
+  const sub = alert.kind === 'bingo' ? 'One line claimed' : 'House claimed'
+  const pieceCount = size === 'hall' ? 120 : 72
 
   return (
     <div
@@ -31,22 +32,24 @@ export function HallAlertBanner({
       aria-live="assertive"
     >
       <div className="hall-alert-confetti" aria-hidden>
-        {Array.from({ length: size === 'hall' ? 80 : 52 }, (_, i) => (
+        {Array.from({ length: pieceCount }, (_, i) => (
           <span
             key={`${confettiId}-${i}`}
             className="hall-alert-piece"
             style={
               {
-                '--x': `${(i * 19) % 100}%`,
-                '--delay': `${(i % 14) * 0.07}s`,
-                '--dur': `${2.2 + (i % 8) * 0.16}s`,
-                '--rot': `${(i * 53) % 360}deg`,
-                '--hue': `${(i * 31) % 360}`,
+                '--x': `${(i * 17) % 100}%`,
+                '--delay': `${(i % 16) * 0.06}s`,
+                '--dur': `${2 + (i % 9) * 0.18}s`,
+                '--rot': `${(i * 47) % 360}deg`,
+                '--hue': `${(i * 29) % 360}`,
+                '--size': `${0.55 + (i % 5) * 0.22}rem`,
               } as CSSProperties
             }
           />
         ))}
       </div>
+      <p className="hall-alert-kicker">Ancrum Fete</p>
       <p className="hall-alert-title">{title}</p>
       <p className="hall-alert-sub">{sub}</p>
     </div>
