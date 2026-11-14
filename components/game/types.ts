@@ -1,6 +1,7 @@
 import { parseThemeColor, type ThemeColor } from './themes'
 
-export type BingoMode = 75 | 90
+/** Ancrum Fete is 90-ball only. */
+export type BingoMode = 90
 
 export type HallAlertKind = 'bingo' | 'full_house'
 
@@ -38,6 +39,11 @@ export const DEFAULT_STATE: BingoState = {
   highContrast: false,
   themeColor: 'green',
   updatedAt: 0,
+}
+
+/** Coerce legacy 75 (or anything else) to 90. */
+export function parseBingoMode(_raw: unknown): BingoMode {
+  return 90
 }
 
 export function parseHallAlert(raw: unknown): HallAlert | null {

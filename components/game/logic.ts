@@ -39,26 +39,6 @@ export function undoLast(state: BingoState): BingoState {
   }
 }
 
-export function clearCalled(state: BingoState): BingoState {
-  return {
-    ...state,
-    called: [],
-    hallAlert: null,
-    updatedAt: Date.now(),
-  }
-}
-
-export function setMode(state: BingoState, mode: BingoMode): BingoState {
-  if (state.mode === mode) return state
-  return {
-    ...state,
-    mode,
-    called: [],
-    hallAlert: null,
-    updatedAt: Date.now(),
-  }
-}
-
 export function setJoinHidden(state: BingoState, joinHidden: boolean): BingoState {
   if (state.joinHidden === joinHidden) return state
   return {
@@ -98,6 +78,7 @@ export function setHighContrast(state: BingoState, highContrast: boolean): Bingo
 export function startNewGame(state: BingoState, themeColor: ThemeColor): BingoState {
   return {
     ...state,
+    mode: 90,
     called: [],
     hallAlert: null,
     joinHidden: false,

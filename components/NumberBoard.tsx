@@ -12,7 +12,7 @@ interface NumberBoardProps {
 export function NumberBoard({ mode, called, highlight = null, compact = false }: NumberBoardProps) {
   const total = maxBall(mode)
   const calledSet = new Set(called)
-  const cols = mode === 90 ? 10 : 15
+  const cols = 10
   const rows = Math.ceil(total / cols)
 
   return (
