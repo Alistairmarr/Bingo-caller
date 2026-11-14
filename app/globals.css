@@ -940,12 +940,9 @@ strong {
 
 .display--live .display-bar {
   min-height: 0;
-  padding: 0;
-  opacity: 0.92;
-}
-
-.display--live .brand-quiet {
-  font-size: clamp(0.85rem, 1.1vw, 1.15rem);
+  padding: 0.15rem 0 0.25rem;
+  align-items: center;
+  opacity: 1;
 }
 
 .display--live .display-meta {
@@ -992,9 +989,52 @@ strong {
 .display-bar {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+/* Hall-readable Fete brand — clear at distance, still thinner than the board/number */
+.display-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.display-brand-mark {
+  width: clamp(1.55rem, 2.6vmin, 2.35rem);
+  height: auto;
+  color: var(--lamp-soft);
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+}
+
+.display-brand-text {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.display-brand-fete {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.45rem, 2.6vw, 2.55rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--lamp);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.display-brand-sub {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(0.72rem, 1.15vw, 1.05rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 234, 0.88);
 }
 
 .display-meta {
@@ -2177,7 +2217,10 @@ strong {
 }
 
 .display.display--contrast .display-bar,
-.display.display--contrast .brand-quiet,
+.display.display--contrast .display-brand,
+.display.display--contrast .display-brand-fete,
+.display.display--contrast .display-brand-sub,
+.display.display--contrast .display-brand-mark,
 .display.display--contrast .display-meta,
 .display.display--contrast .display-label,
 .display.display--contrast .display-mode,

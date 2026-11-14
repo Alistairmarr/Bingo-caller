@@ -63,9 +63,12 @@ export function DisplayView() {
     >
       <div className="display-atmosphere" aria-hidden />
       <header className="display-bar">
-        <Link className="brand-quiet" href="/">
-          <MarketCrossMark className="brand-inline-cross" />
-          Ancrum Fete Bingo
+        <Link className="display-brand" href="/" aria-label="Ancrum Fete Bingo">
+          <MarketCrossMark className="display-brand-mark" />
+          <span className="display-brand-text">
+            <span className="display-brand-fete">Ancrum Fete</span>
+            <span className="display-brand-sub">Bingo · in aid of the village fete</span>
+          </span>
         </Link>
         <p className="display-meta">
           {joined ? (
