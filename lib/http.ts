@@ -11,8 +11,8 @@ const MAX_BUCKETS = 16
  * with ETag 304s. Limits must clear normal fete use while still capping abuse.
  */
 const BUCKET_LIMITS: Record<string, number> = {
-  // ~400 devices × 5 GET/s ≈ 120k/min — headroom for phones + pad + TV + checker
-  'rooms-read': 120_000,
+  // Mobile polls ~1/s; TV/Checker ~5/s; 150 phones ≈ 9k/min + pad/TV — 180k leaves headroom
+  'rooms-read': 180_000,
   'rooms-claim': 180, // POST mint / reclaim (PIN) — still tight vs guessing
   'rooms-write': 900, // Caller PUTs (Next, alerts, contrast, new game)
   'rooms-alert': 360, // Checker Bingo / Full House claims

@@ -176,6 +176,7 @@ export async function getOrCreateHallRoom(
   const existing = await loadHallRow()
   if (existing) {
     const game = rowToState(existing)
+    rememberHallState(game)
     const current = existing.caller_token?.trim() || ''
     if (current && tokensMatch(current, presentedToken)) {
       return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: current }
@@ -215,16 +216,19 @@ export async function getOrCreateHallRoom(
         updatedAt,
       ],
     )
+    const created = { ...fields, updatedAt }
+    rememberHallState(created)
     return {
       ok: true,
       code: HALL_ROOM_CODE,
-      state: { ...fields, updatedAt },
+      state: created,
       callerToken,
     }
   } catch {
     const again = await loadHallRow()
     if (!again) throw new Error('Could not open hall room')
     const game = rowToState(again)
+    rememberHallState(game)
     const current = again.caller_token?.trim() || ''
     if (current && tokensMatch(current, presentedToken)) {
       return { ok: true, code: HALL_ROOM_CODE, state: game, callerToken: current }
@@ -237,14 +241,37 @@ export async function getOrCreateHallRoom(
   }
 }
 
+/**
+ * Short process-local cache so dozens of Mobile ETag polls share one DB read.
+ * Writes refresh the cache immediately; TTL covers same-instance read storms.
+ */
+const HALL_READ_CACHE_TTL_MS = 100
+let hallReadCache: { state: BingoState; at: number } | null = null
+
+function rememberHallState(state: BingoState) {
+  hallReadCache = { state, at: Date.now() }
+}
+
 export async function getRoom(code: string): Promise<BingoState | null> {
   if (!isValidCode(code)) return null
+  if (
+    code === HALL_ROOM_CODE &&
+    hallReadCache &&
+    Date.now() - hallReadCache.at < HALL_READ_CACHE_TTL_MS
+  ) {
+    return hallReadCache.state
+  }
   const rows = await sql<RoomRow>(
     `select code, mode, called, join_hidden, hall_alert, high_contrast, theme_color, caller_token, updated_at from rooms where code = $1`,
     [code],
   )
-  if (!rows[0]) return null
-  return rowToState(rows[0])
+  if (!rows[0]) {
+    if (code === HALL_ROOM_CODE) hallReadCache = null
+    return null
+  }
+  const state = rowToState(rows[0])
+  if (code === HALL_ROOM_CODE) rememberHallState(state)
+  return state
 }
 
 export async function putRoom(
@@ -287,6 +314,7 @@ export async function putRoom(
       next.updatedAt,
     ],
   )
+  rememberHallState(next)
   return { state: next }
 }
 
@@ -318,5 +346,6 @@ export async function putHallAlertOnly(
     JSON.stringify(hallAlert),
     updatedAt,
   ])
+  rememberHallState(next)
   return { state: next }
 }
