@@ -797,7 +797,7 @@ strong {
 
 .caller-next {
   /* Big circular tap target for fat-finger pad calling */
-  --caller-next-size: clamp(7.5rem, 22vmin, 11rem);
+  --caller-next-size: clamp(9.25rem, 28vmin, 14rem);
   width: var(--caller-next-size);
   height: var(--caller-next-size);
   min-height: var(--caller-next-size);
@@ -808,7 +808,7 @@ strong {
   place-content: center;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(1.25rem, 2.9vmin, 1.7rem);
+  font-size: clamp(1.4rem, 3.3vmin, 1.95rem);
   line-height: 1.05;
   letter-spacing: 0.04em;
   text-align: center;
@@ -1240,8 +1240,9 @@ strong {
     font-size: clamp(13rem, 44vmin, 36rem);
   }
 
-  .display--live .ball {
-    font-size: clamp(0.9rem, 2.4vmin, 2rem);
+  .display--live .ball,
+  .display .ball {
+    font-size: clamp(1.2rem, 3.3vmin, 2.5rem);
   }
 
   .room-qr-wrap--overlay .room-qr {
@@ -1613,17 +1614,18 @@ strong {
   align-content: stretch;
   justify-items: center;
   align-items: center;
-  gap: clamp(0.1rem, 0.35vmin, 0.4rem);
+  gap: clamp(0.08rem, 0.28vmin, 0.32rem);
 }
 
 .display .ball {
   aspect-ratio: 1;
-  width: 92%;
+  width: 96%;
   height: auto;
   max-width: 100%;
   max-height: 100%;
   border-radius: 50%;
-  font-size: clamp(0.6rem, 2vmin, 1.45rem);
+  /* Hall-readable on the TV grid */
+  font-size: clamp(0.95rem, 2.9vmin, 2.15rem);
 }
 
 /* —— Mobile follow-along —— */
@@ -2377,10 +2379,14 @@ strong {
   font-size: clamp(0.85rem, 2.6vmin, 1.65rem);
 }
 
-.checker .ball--idle {
-  background: rgba(8, 14, 10, 0.72);
-  color: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.1);
+/* Check mode: idle balls vanish so only called numbers catch the eye */
+.checker.checker--called-focus .ball--idle {
+  background: transparent;
+  color: transparent;
+  border-color: transparent;
+  opacity: 0;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 .checker .ball--called {
@@ -2388,13 +2394,14 @@ strong {
   color: #063818;
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  font-size: clamp(1rem, 3vmin, 1.9rem);
 }
 
 .checker .ball--hot {
   background: linear-gradient(160deg, #ffffff, #ffe14a);
   color: #1a1200;
   border: 3px solid #fff;
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .checker-side {

@@ -97,6 +97,10 @@ if (await caller.locator('.caller-mode-locked').count()) {
 }
 await display.waitForSelector('.display-qr-overlay .room-qr', { timeout: 8000 })
 await display.waitForSelector('.display-qr-prep .display-next-game-colour', { timeout: 8000 })
+const qrCaption = ((await display.locator('.display-qr-overlay .room-qr-caption').textContent()) || '').trim()
+if (qrCaption !== 'Scan with your phone to follow along') {
+  throw new Error(`QR caption mismatch: ${qrCaption}`)
+}
 
 await caller.getByRole('button', { name: 'Next number' }).click()
 await caller.waitForTimeout(1200)

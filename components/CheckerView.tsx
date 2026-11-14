@@ -49,7 +49,7 @@ export function CheckerView() {
 
   return (
     <main
-      className={`checker theme-${state.themeColor} ${joined ? 'checker--live' : ''}`}
+      className={`checker checker--called-focus theme-${state.themeColor} ${joined ? 'checker--live' : ''}`}
       data-theme={state.themeColor}
     >
       <header className="checker-bar">
