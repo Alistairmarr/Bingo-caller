@@ -1058,7 +1058,8 @@ strong {
 
 .display-live-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.55fr);
+  /* Board keeps the lead; side column wide enough for a hall-scale last-called */
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.72fr);
   gap: 0.85rem;
   min-height: 0;
   height: 100%;
@@ -1222,9 +1223,9 @@ strong {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
-  /* Large again — QR is overlay, so the column can hold a hall-sized number */
-  font-size: clamp(10rem, 38vmin, 28rem);
-  line-height: 0.85;
+  /* Hall-readable last-called — fills the side column; board + recent keep room */
+  font-size: clamp(12rem, 48vmin, 34rem);
+  line-height: 0.82;
   max-width: 100%;
   overflow: hidden;
   color: var(--call-number, #fffef2);
@@ -1232,12 +1233,12 @@ strong {
 }
 
 .display--live .display-number {
-  font-size: clamp(11rem, 40vmin, 30rem);
+  font-size: clamp(15rem, 54vmin, 42rem);
 }
 
 @media (min-width: 1800px) {
   .display--live .display-number {
-    font-size: clamp(13rem, 44vmin, 36rem);
+    font-size: clamp(18rem, 60vmin, 52rem);
   }
 
   .display--live .ball,
@@ -1333,18 +1334,69 @@ strong {
   animation: hall-alert-in 0.32s ease-out;
   pointer-events: none;
   text-align: center;
+  overflow: hidden;
 }
 
+/* Bingo: warm gold rain + punchy pop */
 .hall-alert--bingo {
   background:
     radial-gradient(circle at 50% 35%, rgba(255, 200, 60, 0.28), transparent 55%),
     linear-gradient(160deg, #5a2808 0%, #2a1408 45%, #0a1810 100%);
 }
 
+.hall-alert--bingo .hall-alert-kicker,
+.hall-alert--bingo .hall-alert-title {
+  animation: hall-alert-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.hall-alert--bingo .hall-alert-title {
+  color: var(--lamp-soft);
+  text-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(255, 212, 90, 0.55),
+    0 0 72px rgba(255, 180, 40, 0.35);
+}
+
+.hall-alert--bingo.hall-alert--hall .hall-alert-title {
+  text-shadow:
+    0 10px 0 rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(255, 212, 90, 0.55),
+    0 0 100px rgba(255, 180, 40, 0.4);
+}
+
+/* Full House: green ring burst + rising sparks — reads different across the hall */
 .hall-alert--full-house {
   background:
-    radial-gradient(circle at 50% 35%, rgba(80, 255, 140, 0.22), transparent 55%),
-    linear-gradient(160deg, #0a5c34 0%, #084028 45%, #0a1810 100%);
+    radial-gradient(circle at 50% 45%, rgba(120, 255, 170, 0.32), transparent 50%),
+    linear-gradient(160deg, #0a6b3a 0%, #084028 45%, #061810 100%);
+  animation: hall-alert-fh-in 0.45s cubic-bezier(0.2, 1.1, 0.4, 1);
+}
+
+.hall-alert--full-house .hall-alert-kicker {
+  color: #b8ffc8;
+  animation: hall-alert-fh-rise 0.7s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.hall-alert--full-house .hall-alert-title {
+  color: #e8ffe8;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 5px 0 rgba(0, 40, 20, 0.55),
+    0 0 32px rgba(80, 255, 140, 0.55),
+    0 0 80px rgba(40, 220, 120, 0.4);
+  animation: hall-alert-fh-bloom 0.85s cubic-bezier(0.15, 1.35, 0.35, 1);
+}
+
+.hall-alert--full-house.hall-alert--hall .hall-alert-title {
+  text-shadow:
+    0 10px 0 rgba(0, 40, 20, 0.55),
+    0 0 48px rgba(80, 255, 140, 0.6),
+    0 0 120px rgba(40, 220, 120, 0.45);
+}
+
+.hall-alert--full-house .hall-alert-sub {
+  color: #d4ffe0;
+  animation: hall-alert-fh-rise 0.75s 0.08s cubic-bezier(0.2, 1.2, 0.4, 1) both;
 }
 
 .hall-alert-kicker {
@@ -1358,7 +1410,6 @@ strong {
   text-transform: uppercase;
   color: var(--lamp);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
-  animation: hall-alert-pop 0.5s cubic-bezier(0.2, 1.35, 0.4, 1);
 }
 
 .hall-alert--hall .hall-alert-kicker {
@@ -1374,20 +1425,10 @@ strong {
   font-size: clamp(3.6rem, 16vw, 6.5rem);
   line-height: 0.9;
   letter-spacing: 0.02em;
-  color: var(--lamp-soft);
-  text-shadow:
-    0 5px 0 rgba(0, 0, 0, 0.5),
-    0 0 28px rgba(255, 212, 90, 0.55),
-    0 0 72px rgba(255, 180, 40, 0.35);
-  animation: hall-alert-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
 .hall-alert--hall .hall-alert-title {
   font-size: clamp(6.5rem, 24vmin, 16rem);
-  text-shadow:
-    0 10px 0 rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(255, 212, 90, 0.55),
-    0 0 100px rgba(255, 180, 40, 0.4);
 }
 
 .hall-alert-sub {
@@ -1415,15 +1456,66 @@ strong {
 
 .hall-alert-piece {
   position: absolute;
+  border-radius: 2px;
+  background: hsl(var(--hue) 92% 58%);
+  box-shadow: 0 0 10px hsla(var(--hue), 90%, 60%, 0.45);
+}
+
+/* Bingo: confetti falls from the top */
+.hall-alert-piece--fall {
   top: -14%;
   left: var(--x);
   width: var(--size, 0.75rem);
   height: calc(var(--size, 0.75rem) * 1.55);
-  border-radius: 2px;
-  background: hsl(var(--hue) 92% 58%);
-  box-shadow: 0 0 10px hsla(var(--hue), 90%, 60%, 0.45);
   transform: rotate(var(--rot));
   animation: girty-fall var(--dur) linear var(--delay) infinite;
+}
+
+/* Full House: sparks burst outward from centre */
+.hall-alert-piece--burst {
+  top: 50%;
+  left: 50%;
+  width: var(--size, 0.65rem);
+  height: var(--size, 0.65rem);
+  border-radius: 50%;
+  background: hsl(var(--hue) 95% 62%);
+  box-shadow: 0 0 14px hsla(var(--hue), 95%, 60%, 0.7);
+  animation: hall-alert-burst var(--dur) ease-out var(--delay) infinite;
+}
+
+.hall-alert-rings {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.hall-alert-ring {
+  position: absolute;
+  width: min(28vmin, 12rem);
+  height: min(28vmin, 12rem);
+  border-radius: 50%;
+  border: 3px solid rgba(140, 255, 180, 0.55);
+  box-shadow: 0 0 24px rgba(80, 255, 140, 0.35);
+  animation: hall-alert-ring 1.8s ease-out infinite;
+}
+
+.hall-alert-ring--2 {
+  animation-delay: 0.35s;
+  border-color: rgba(200, 255, 220, 0.4);
+}
+
+.hall-alert-ring--3 {
+  animation-delay: 0.7s;
+  border-color: rgba(100, 255, 160, 0.3);
+}
+
+.hall-alert--hall .hall-alert-ring {
+  width: min(42vmin, 22rem);
+  height: min(42vmin, 22rem);
+  border-width: 4px;
 }
 
 @keyframes hall-alert-in {
@@ -1432,6 +1524,17 @@ strong {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes hall-alert-fh-in {
+  from {
+    opacity: 0;
+    filter: brightness(0.7);
+  }
+  to {
+    opacity: 1;
+    filter: brightness(1);
   }
 }
 
@@ -1446,6 +1549,59 @@ strong {
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes hall-alert-fh-bloom {
+  0% {
+    transform: scale(0.35) rotate(-4deg);
+    opacity: 0;
+    letter-spacing: 0.2em;
+  }
+  55% {
+    transform: scale(1.12) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+    letter-spacing: 0.04em;
+  }
+}
+
+@keyframes hall-alert-fh-rise {
+  0% {
+    transform: translateY(1.2rem);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes hall-alert-burst {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -1.4)) scale(0.15);
+    opacity: 0;
+  }
+}
+
+@keyframes hall-alert-ring {
+  0% {
+    transform: scale(0.25);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
   }
 }
 
