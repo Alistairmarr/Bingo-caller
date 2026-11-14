@@ -247,10 +247,10 @@ if (checkerLast !== displayNow) {
 await checker.getByRole('button', { name: 'Bingo' }).click()
 await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
-await caller.waitForSelector('.caller-alert-live--from-checker', { timeout: 8000 })
-const checkerClaimText = ((await caller.locator('.caller-alert-live-text').textContent()) || '').trim()
+await caller.waitForSelector('.caller-checker-claim-overlay', { timeout: 8000 })
+const checkerClaimText = ((await caller.locator('.caller-checker-claim-title').textContent()) || '').trim()
 if (!/Checker raised Bingo/i.test(checkerClaimText)) {
-  throw new Error(`Caller should show Checker claim notice, got: ${checkerClaimText}`)
+  throw new Error(`Caller should show full-screen Checker claim pause, got: ${checkerClaimText}`)
 }
 await checker.waitForSelector('.checker-cue--bingo', { timeout: 8000 })
 if (await checker.locator('.hall-alert').count()) {

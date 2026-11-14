@@ -317,34 +317,17 @@ export function CallerView() {
 
           {/* Bottom of pad — kept away from Next number to avoid fat-finger misses */}
           <div className="caller-alerts" role="group" aria-label="Hall win alerts">
-            {state.hallAlert ? (
-              <div
-                className={
-                  state.hallAlert.source === 'checker'
-                    ? 'caller-alert-live caller-alert-live--from-checker'
-                    : 'caller-alert-live'
-                }
-                role="status"
-                aria-live="assertive"
-              >
+            {state.hallAlert && state.hallAlert.source !== 'checker' ? (
+              <div className="caller-alert-live" role="status" aria-live="assertive">
                 <p className="caller-alert-live-text">
-                  {state.hallAlert.source === 'checker' ? (
-                    <>
-                      Checker raised {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} — showing on
-                      TV &amp; phones. Next number clears it
-                    </>
-                  ) : (
-                    <>
-                      {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones —
-                      Next number clears it
-                    </>
-                  )}
+                  {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones —
+                  Next number clears it
                 </p>
                 <button type="button" className="btn btn-secondary caller-alert-dismiss" onClick={dismissHallAlert}>
                   Dismiss announcement
                 </button>
               </div>
-            ) : (
+            ) : !state.hallAlert ? (
               <>
                 <button
                   type="button"
@@ -363,9 +346,32 @@ export function CallerView() {
                   Full House
                 </button>
               </>
-            )}
+            ) : null}
           </div>
         </>
+      ) : null}
+
+      {/* Checker claim — full-screen pause so the games master cannot miss it */}
+      {state.hallAlert?.source === 'checker' ? (
+        <div
+          className="caller-checker-claim-overlay"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="caller-checker-claim-title"
+          aria-describedby="caller-checker-claim-sub"
+        >
+          <p className="caller-checker-claim-kicker">Pause calling</p>
+          <p id="caller-checker-claim-title" className="caller-checker-claim-title">
+            Checker raised {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'}
+          </p>
+          <p id="caller-checker-claim-sub" className="caller-checker-claim-sub">
+            Showing on TV &amp; phones — check the claim before you continue
+          </p>
+          <button type="button" className="btn btn-secondary caller-checker-claim-dismiss" onClick={dismissHallAlert}>
+            Dismiss announcement
+          </button>
+          <p className="caller-checker-claim-hint">Next number also clears it</p>
+        </div>
       ) : null}
 
       <DirtyGirty trigger={girty} />

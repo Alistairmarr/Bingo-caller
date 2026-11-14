@@ -1281,25 +1281,85 @@ strong {
   background: rgba(12, 22, 16, 0.55);
 }
 
-.caller-alert-live--from-checker {
-  border-color: #ffe14a;
-  background: linear-gradient(160deg, rgba(90, 40, 8, 0.92), rgba(20, 40, 18, 0.88));
-  box-shadow: 0 0 0 3px rgba(255, 212, 90, 0.35);
-  animation: caller-checker-claim-flash 0.9s ease-out 2;
+/* Full-screen Caller pause when Checker raises Bingo / Full House */
+.caller-checker-claim-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: clamp(1.25rem, 4vmin, 2.5rem);
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 200, 60, 0.28), transparent 55%),
+    linear-gradient(160deg, #5a1e08 0%, #2a1408 45%, #0a1810 100%);
+  animation: caller-checker-claim-in 0.35s ease-out;
+  pointer-events: auto;
 }
 
-.caller-alert-live--from-checker .caller-alert-live-text {
+.caller-checker-claim-kicker {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.35rem, 3.5vmin, 2.25rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
   color: #ffe08a;
-  font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
 }
 
-@keyframes caller-checker-claim-flash {
-  0%,
-  100% {
-    filter: brightness(1);
+.caller-checker-claim-title {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.75rem, 10vmin, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: #fff8e6;
+  text-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.5),
+    0 0 36px rgba(255, 200, 60, 0.45);
+  animation: girty-pop 0.55s cubic-bezier(0.2, 1.35, 0.4, 1);
+}
+
+.caller-checker-claim-sub {
+  margin: 0.15rem 0 0;
+  max-width: 28ch;
+  font-size: clamp(1.15rem, 3.2vmin, 1.75rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: rgba(255, 248, 234, 0.95);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.caller-checker-claim-dismiss {
+  margin-top: 0.85rem;
+  min-height: 3.5rem;
+  min-width: min(100%, 18rem);
+  font-size: clamp(1.05rem, 2.6vmin, 1.35rem);
+  font-weight: 800;
+}
+
+.caller-checker-claim-hint {
+  margin: 0.35rem 0 0;
+  font-size: clamp(0.95rem, 2.2vmin, 1.2rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 224, 138, 0.85);
+}
+
+@keyframes caller-checker-claim-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
   }
-  40% {
-    filter: brightness(1.35);
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
