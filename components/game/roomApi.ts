@@ -94,6 +94,7 @@ export type FetchRoomResult =
   | { status: 'missing' }
   | { status: 'unchanged' }
   | { status: 'ok'; state: BingoState }
+  | { status: 'rate_limited' }
 
 export async function fetchRoom(code: string): Promise<FetchRoomResult> {
   const normalized = normalizeRoomCode(code)
@@ -108,8 +109,14 @@ export async function fetchRoom(code: string): Promise<FetchRoomResult> {
     roomEtags.delete(normalized)
     return { status: 'missing' }
   }
+  if (res.status === 429) {
+    return { status: 'rate_limited' }
+  }
   const data = await parseJson(res)
-  if (!res.ok || !data?.state) throw new Error(data?.error || 'Could not load room')
+  if (!res.ok || !data?.state) {
+    const err = data?.error === 'rate_limited' ? 'rate_limited' : data?.error || 'Could not load room'
+    throw new Error(err)
+  }
   const nextEtag = res.headers.get('etag')
   if (nextEtag) roomEtags.set(normalized, nextEtag)
   return { status: 'ok', state: data.state as BingoState }

@@ -51,9 +51,20 @@ display.on('request', (req) => {
   const u = req.url()
   if (u.includes('/sounds/bingo.wav') || u.includes('/sounds/full-house.wav')) soundHits.push(u)
 })
+await display.addInitScript(() => {
+  window.__hallAlertPlayCount = 0
+  const orig = HTMLAudioElement.prototype.play
+  HTMLAudioElement.prototype.play = function (...args) {
+    window.__hallAlertPlayCount = (window.__hallAlertPlayCount || 0) + 1
+    return orig.apply(this, args)
+  }
+})
 await display.goto(`${base}/display`)
 // Number stays in DOM; QR only while prep (empty board + code shown)
 await display.waitForSelector('.display-number', { state: 'attached' })
+// Unlock Display audio (TV gesture) so subsequent claims can play
+await display.click('.display-number', { force: true }).catch(() => {})
+await display.waitForTimeout(200)
 
 const mobileCtx = await browser.newContext({
   viewport: { width: 390, height: 844 },
@@ -178,7 +189,7 @@ if (await dismiss.count()) {
   await dismiss.click()
   await caller.waitForSelector('.btn-bingo', { timeout: 8000 })
 }
-const soundsBeforeBingo = soundHits.length
+const playsBeforeBingo = await display.evaluate(() => window.__hallAlertPlayCount || 0)
 await caller.getByRole('button', { name: 'Bingo' }).click()
 await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
@@ -189,6 +200,10 @@ if (!soundHits.some((u) => u.includes('/sounds/bingo.wav'))) {
 }
 if (await mobile.evaluate(() => performance.getEntriesByType('resource').some((r) => r.name.includes('/sounds/')))) {
   throw new Error('Mobile must not load hall alert sounds')
+}
+const playsAfterBingo = await display.evaluate(() => window.__hallAlertPlayCount || 0)
+if (playsAfterBingo <= playsBeforeBingo) {
+  throw new Error('Display should play Bingo announcement audio')
 }
 if (!(await display.locator('.hall-alert--bingo').count())) {
   throw new Error('Bingo alert should stay until dismissed or Next')
@@ -203,12 +218,28 @@ await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 
+// Second Bingo must play again (replay bug: only first claim used to sound)
+const playsBeforeBingo2 = await display.evaluate(() => window.__hallAlertPlayCount || 0)
+await caller.getByRole('button', { name: 'Bingo' }).click()
+await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await caller.waitForTimeout(900)
+const playsAfterBingo2 = await display.evaluate(() => window.__hallAlertPlayCount || 0)
+if (playsAfterBingo2 <= playsBeforeBingo2) {
+  throw new Error('Bingo sound must replay on every claim, not only the first')
+}
+await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
+await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
+
 await caller.getByRole('button', { name: 'Full House' }).click()
 await display.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--full-house', { timeout: 8000 })
 await caller.waitForTimeout(800)
 if (!soundHits.some((u) => u.includes('/sounds/full-house.wav'))) {
   throw new Error('Display should load /sounds/full-house.wav when Full House is pressed')
+}
+const playsAfterFh = await display.evaluate(() => window.__hallAlertPlayCount || 0)
+if (playsAfterFh <= playsAfterBingo2) {
+  throw new Error('Display should play Full House announcement audio')
 }
 if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
   throw new Error('Next number should stay enabled while Full House is showing')
