@@ -16,7 +16,7 @@ import { lastCalled } from './game/types'
 
 export function MobileView() {
   const searchParams = useSearchParams()
-  const { state, room, roomStatus, roomError, joinRoom } = useBingoStore({ role: 'display' })
+  const { state, room, roomStatus, roomError, joinRoom } = useBingoStore({ role: 'mobile' })
   const [draft, setDraft] = useState('')
   const autoTried = useRef(false)
   const last = lastCalled(state)

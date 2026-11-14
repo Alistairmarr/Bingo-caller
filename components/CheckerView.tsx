@@ -16,7 +16,7 @@ import { lastCalled } from './game/types'
 export function CheckerView() {
   const searchParams = useSearchParams()
   const { state, room, roomStatus, roomError, joinRoom, signalCheckerHallAlert } = useBingoStore({
-    role: 'display',
+    role: 'checker',
   })
   const [draft, setDraft] = useState('FETE')
   const [claimBusy, setClaimBusy] = useState(false)

@@ -59,7 +59,24 @@ function getChannel(): BroadcastChannel | null {
   return channel
 }
 
-export type SyncRole = 'caller' | 'display' | 'none'
+/** `display` = TV; `mobile` = audience phones (slower poll); `checker` = claim pad. */
+export type SyncRole = 'caller' | 'display' | 'mobile' | 'checker' | 'none'
+
+function pollTuning(role: SyncRole): { baseMs: number; maxBackoffMs: number } {
+  switch (role) {
+    case 'mobile':
+      // Audience phones: ~1s is fine for follow-along; keeps hall DB load down
+      return { baseMs: 1000, maxBackoffMs: 8000 }
+    case 'caller':
+      return { baseMs: 400, maxBackoffMs: 1500 }
+    case 'display':
+    case 'checker':
+      // TV + Checker stay snappy (~200ms ETag)
+      return { baseMs: 200, maxBackoffMs: 1500 }
+    default:
+      return { baseMs: 1000, maxBackoffMs: 4000 }
+  }
+}
 
 export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null } = { role: 'none' }) {
   const { role, roomCode = null } = opts
@@ -143,15 +160,17 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
   }, [])
 
   useEffect(() => {
-    // Display polls for calls; Caller also polls so Checker Bingo/Full House claims reach the pad.
-    if ((role !== 'display' && role !== 'caller') || !room) return
+    // Polling surfaces: TV Display, Mobile follow-along, Checker, and Caller (for Checker claims).
+    const polls =
+      role === 'display' || role === 'mobile' || role === 'checker' || role === 'caller'
+    if (!polls || !room) return
     let cancelled = false
     let inFlight = false
     let timer: number | null = null
-    if (role === 'display') setRoomStatus('connecting')
+    const showsJoinStatus = role === 'display' || role === 'mobile' || role === 'checker'
+    if (showsJoinStatus) setRoomStatus('connecting')
 
-    // Display/Mobile/Checker: ~200ms + ETag 304s. Caller: 400ms (claims still snappy, less read load).
-    const BASE_POLL_MS = role === 'caller' ? 400 : 200
+    const { baseMs: BASE_POLL_MS, maxBackoffMs } = pollTuning(role)
     let pollMs = BASE_POLL_MS
 
     const schedule = () => {
@@ -171,15 +190,15 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
         const remote = await fetchRoom(room)
         if (cancelled) return
         if (remote.status === 'missing') {
-          if (role === 'display') {
+          if (showsJoinStatus) {
             setRoomStatus('error')
             setRoomError('Room not found — check the code on the Pad')
           }
           return
         }
         if (remote.status === 'rate_limited') {
-          // Back off quietly — don’t flash a hard error on the hall screens
-          pollMs = Math.min(pollMs * 2, 4000)
+          // Quiet backoff — mobiles stretch further so pad/TV stay preferred
+          pollMs = Math.min(pollMs * 2, maxBackoffMs)
           return
         }
         pollMs = BASE_POLL_MS
@@ -189,15 +208,15 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
             writeStored(remote.state)
           }
         }
-        if (role === 'display') {
+        if (showsJoinStatus) {
           setRoomStatus('live')
           setRoomError(null)
         }
       } catch (err) {
-        if (!cancelled && role === 'display') {
+        if (!cancelled && showsJoinStatus) {
           const message = err instanceof Error ? err.message : 'Could not reach room'
           if (message === 'rate_limited') {
-            pollMs = Math.min(pollMs * 2, 4000)
+            pollMs = Math.min(pollMs * 2, maxBackoffMs)
           } else {
             setRoomStatus('error')
             setRoomError(message)
