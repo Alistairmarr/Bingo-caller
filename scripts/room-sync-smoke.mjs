@@ -89,6 +89,12 @@ if (await caller.getByRole('button', { name: 'Clear board' }).count()) {
 if (await caller.getByRole('button', { name: '75-ball' }).count()) {
   throw new Error('75-ball should be removed — 90-ball only')
 }
+if (await caller.getByRole('button', { name: '90-ball' }).count()) {
+  throw new Error('90-ball mode chip should be removed from the top bar')
+}
+if (await caller.locator('.caller-mode-locked').count()) {
+  throw new Error('caller-mode-locked chip should be gone — status text covers 90-ball')
+}
 await display.waitForSelector('.display-qr-overlay .room-qr', { timeout: 8000 })
 await display.waitForSelector('.display-qr-prep .display-next-game-colour', { timeout: 8000 })
 

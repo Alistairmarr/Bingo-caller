@@ -154,9 +154,6 @@ export function CallerView() {
           <h1 className="sr-only">Caller</h1>
         </div>
         <div className="caller-top-actions">
-          <p className="caller-mode-locked" aria-label="Game mode">
-            90-ball
-          </p>
           <button
             type="button"
             className={showCallNames ? 'mode-btn mode-btn--active' : 'mode-btn'}
