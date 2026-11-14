@@ -73,7 +73,6 @@ export function DisplayView() {
         <p className="display-meta">
           {joined ? (
             <>
-              <span className="display-mode">{state.mode}-ball</span>
               <span className="display-count">{state.called.length} called</span>
               <span className="display-room">{room}</span>
             </>

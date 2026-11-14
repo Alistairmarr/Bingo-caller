@@ -60,7 +60,7 @@ export function CheckerView() {
         <p className="checker-role">Checker</p>
         {joined ? (
           <p className="checker-meta">
-            {state.mode}-ball · {state.called.length} called · {room}
+            {state.called.length} called · {room}
           </p>
         ) : (
           <p className="checker-meta">Join hall room</p>
