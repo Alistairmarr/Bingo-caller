@@ -152,7 +152,7 @@ export function DisplayView() {
                   code={room!}
                   size={900}
                   className="room-qr-wrap--hall room-qr-wrap--overlay"
-                  label="Scan with your phone"
+                  label="Scan with your phone to follow along"
                 />
               </div>
             </div>
