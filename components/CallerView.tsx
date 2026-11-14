@@ -318,10 +318,27 @@ export function CallerView() {
           {/* Bottom of pad — kept away from Next number to avoid fat-finger misses */}
           <div className="caller-alerts" role="group" aria-label="Hall win alerts">
             {state.hallAlert ? (
-              <div className="caller-alert-live">
+              <div
+                className={
+                  state.hallAlert.source === 'checker'
+                    ? 'caller-alert-live caller-alert-live--from-checker'
+                    : 'caller-alert-live'
+                }
+                role="status"
+                aria-live="assertive"
+              >
                 <p className="caller-alert-live-text">
-                  {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones —
-                  Next number clears it
+                  {state.hallAlert.source === 'checker' ? (
+                    <>
+                      Checker raised {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} — showing on
+                      TV &amp; phones. Next number clears it
+                    </>
+                  ) : (
+                    <>
+                      {state.hallAlert.kind === 'bingo' ? 'Bingo' : 'Full House'} showing on TV &amp; phones —
+                      Next number clears it
+                    </>
+                  )}
                 </p>
                 <button type="button" className="btn btn-secondary caller-alert-dismiss" onClick={dismissHallAlert}>
                   Dismiss announcement

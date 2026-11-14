@@ -5,10 +5,14 @@ export type BingoMode = 90
 
 export type HallAlertKind = 'bingo' | 'full_house'
 
+export type HallAlertSource = 'caller' | 'checker'
+
 export interface HallAlert {
   kind: HallAlertKind
   /** Unique per press so Display/Mobile can re-fire the same kind. */
   id: number
+  /** Who raised the claim — Caller pad or Checker. */
+  source: HallAlertSource
 }
 
 export type { ThemeColor }
@@ -52,7 +56,8 @@ export function parseHallAlert(raw: unknown): HallAlert | null {
   const kind = obj.kind === 'bingo' || obj.kind === 'full_house' ? obj.kind : null
   const id = typeof obj.id === 'number' && Number.isFinite(obj.id) ? obj.id : null
   if (!kind || id === null) return null
-  return { kind, id }
+  const source: HallAlertSource = obj.source === 'checker' ? 'checker' : 'caller'
+  return { kind, id, source }
 }
 
 export { parseThemeColor }

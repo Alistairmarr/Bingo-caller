@@ -133,3 +133,22 @@ export async function pushRoom(code: string, state: BingoState): Promise<BingoSt
   if (!res.ok || !data?.state) throw new Error(data?.error || 'Could not update room')
   return data.state as BingoState
 }
+
+/** Checker raises Bingo / Full House without Caller token. */
+export async function pushCheckerHallAlert(
+  code: string,
+  kind: 'bingo' | 'full_house',
+): Promise<BingoState> {
+  const normalized = normalizeRoomCode(code)
+  if (!isValidRoomCode(normalized)) throw new Error('Invalid room code')
+  const res = await fetch(`/api/rooms/${normalized}/alert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind }),
+  })
+  const data = await parseJson(res)
+  if (!res.ok || !data?.state) throw new Error(data?.error || 'Could not raise claim')
+  // Keep Display ETag cache fresh after alert write
+  roomEtags.delete(normalized)
+  return data.state as BingoState
+}

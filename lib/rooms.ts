@@ -10,9 +10,12 @@ export type BingoMode = 90
 
 export type HallAlertKind = 'bingo' | 'full_house'
 
+export type HallAlertSource = 'caller' | 'checker'
+
 export interface HallAlert {
   kind: HallAlertKind
   id: number
+  source: HallAlertSource
 }
 
 const THEME_COLORS = ['yellow', 'red', 'lilac', 'brown', 'pink', 'green'] as const
@@ -47,7 +50,8 @@ function parseHallAlert(raw: unknown): HallAlert | null {
   const kind = obj.kind === 'bingo' || obj.kind === 'full_house' ? obj.kind : null
   const id = typeof obj.id === 'number' && Number.isFinite(obj.id) ? obj.id : null
   if (!kind || id === null) return null
-  return { kind, id }
+  const source: HallAlertSource = obj.source === 'checker' ? 'checker' : 'caller'
+  return { kind, id, source }
 }
 
 function parseThemeColor(raw: unknown): ThemeColor {
@@ -283,5 +287,36 @@ export async function putRoom(
       next.updatedAt,
     ],
   )
+  return { state: next }
+}
+
+/** Checker (or open hall) may raise Bingo / Full House without the Caller token — alert only. */
+export async function putHallAlertOnly(
+  code: string,
+  kind: HallAlertKind,
+  source: HallAlertSource = 'checker',
+): Promise<{ state: BingoState; error?: string; status?: number }> {
+  if (!isValidCode(code)) {
+    return { state: emptyState(), error: 'invalid_code', status: 400 }
+  }
+  if (kind !== 'bingo' && kind !== 'full_house') {
+    return { state: emptyState(), error: 'invalid_kind', status: 400 }
+  }
+  if (code !== HALL_ROOM_CODE) {
+    return { state: emptyState(), error: 'not_found', status: 404 }
+  }
+  const existing = await loadHallRow()
+  if (!existing) {
+    return { state: emptyState(), error: 'not_found', status: 404 }
+  }
+  const prev = rowToState(existing)
+  const updatedAt = Date.now()
+  const hallAlert: HallAlert = { kind, id: updatedAt, source }
+  const next: BingoState = { ...prev, hallAlert, updatedAt }
+  await sql(`update rooms set hall_alert = $2::jsonb, updated_at = $3 where code = $1`, [
+    code,
+    JSON.stringify(hallAlert),
+    updatedAt,
+  ])
   return { state: next }
 }

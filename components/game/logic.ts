@@ -48,10 +48,14 @@ export function setJoinHidden(state: BingoState, joinHidden: boolean): BingoStat
   }
 }
 
-export function setHallAlert(state: BingoState, kind: HallAlertKind): BingoState {
+export function setHallAlert(
+  state: BingoState,
+  kind: HallAlertKind,
+  source: 'caller' | 'checker' = 'caller',
+): BingoState {
   return {
     ...state,
-    hallAlert: { kind, id: Date.now() },
+    hallAlert: { kind, id: Date.now(), source },
     updatedAt: Date.now(),
   }
 }

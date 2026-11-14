@@ -115,7 +115,7 @@ export function DisplayView() {
           <div className="display-live-body">
             <section className="display-board-wrap" aria-label="Called numbers board">
               <div className="board-frame board-frame--square">
-                <NumberBoard mode={state.mode} called={state.called} highlight={last} />
+                <NumberBoard mode={state.mode} called={state.called} highlight={last} pulseHot />
               </div>
             </section>
 
