@@ -8,41 +8,100 @@ const SOUND: Record<'bingo' | 'full_house', string> = {
   full_house: '/sounds/full-house.wav',
 }
 
+type Players = Record<'bingo' | 'full_house', HTMLAudioElement>
+
 /**
- * TV Display only — play a distinct cue when Bingo / Full House appears.
- * Silent on Caller/Mobile; safe if the browser blocks autoplay until a tap.
+ * TV Display only — play a clear Bingo / Full House announcement when the alert appears.
+ * Silent on Caller/Mobile. Reuses unlocked Audio elements so every claim replays (not only the first).
  */
 export function useHallAlertSound(alert: HallAlert | null, enabled: boolean) {
   const lastIdRef = useRef<number | null>(null)
   const unlockedRef = useRef(false)
+  const playersRef = useRef<Players | null>(null)
+
+  const ensurePlayers = (): Players => {
+    if (!playersRef.current) {
+      const bingo = new Audio(SOUND.bingo)
+      const fullHouse = new Audio(SOUND.full_house)
+      bingo.preload = 'auto'
+      fullHouse.preload = 'auto'
+      bingo.volume = 0.95
+      fullHouse.volume = 0.95
+      playersRef.current = { bingo, full_house: fullHouse }
+    }
+    return playersRef.current
+  }
+
+  const unlockPlayers = () => {
+    unlockedRef.current = true
+    const players = ensurePlayers()
+    for (const audio of Object.values(players)) {
+      audio.preload = 'auto'
+      // Silent play/pause keeps the element in an unlocked gesture chain on TV browsers
+      const prev = audio.volume
+      audio.volume = 0.001
+      void audio
+        .play()
+        .then(() => {
+          audio.pause()
+          audio.currentTime = 0
+          audio.volume = prev
+        })
+        .catch(() => {
+          audio.volume = prev
+        })
+    }
+  }
+
+  const playAlert = (kind: 'bingo' | 'full_house') => {
+    const players = ensurePlayers()
+    const audio = players[kind]
+    try {
+      audio.pause()
+      audio.currentTime = 0
+    } catch {
+      /* ignore seek errors while loading */
+    }
+    audio.volume = 0.95
+    void audio.play().catch(() => {
+      // Some WebViews drop the element after one play — recreate once and retry
+      const fresh = new Audio(SOUND[kind])
+      fresh.preload = 'auto'
+      fresh.volume = 0.95
+      players[kind] = fresh
+      void fresh.play().catch(() => {
+        /* still blocked until Display gets a remote/OK press */
+      })
+    })
+  }
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return
 
-    const unlock = () => {
-      unlockedRef.current = true
-      // Warm both cues so Bingo / Full House start promptly on the TV
-      for (const src of Object.values(SOUND)) {
-        const warm = new Audio(src)
-        warm.preload = 'auto'
-        warm.load()
-      }
-    }
-    // Fire Stick / TV browsers often need one gesture before audio works
-    window.addEventListener('pointerdown', unlock, { once: true })
-    window.addEventListener('keydown', unlock, { once: true })
-    // Best-effort silent unlock for players that allow it without a tap
-    const probe = new Audio(SOUND.bingo)
+    ensurePlayers()
+    const onGesture = () => unlockPlayers()
+    window.addEventListener('pointerdown', onGesture, { once: true })
+    window.addEventListener('keydown', onGesture, { once: true })
+
+    // Best-effort unlock without a tap (some Fire Stick / TV players allow it)
+    const probe = ensurePlayers().bingo
+    const prev = probe.volume
     probe.volume = 0.001
-    void probe.play().then(() => {
-      probe.pause()
-      unlockedRef.current = true
-    }).catch(() => {
-      /* wait for a remote/OK press on the Display */
-    })
+    void probe
+      .play()
+      .then(() => {
+        probe.pause()
+        probe.currentTime = 0
+        probe.volume = prev
+        unlockedRef.current = true
+      })
+      .catch(() => {
+        probe.volume = prev
+      })
+
     return () => {
-      window.removeEventListener('pointerdown', unlock)
-      window.removeEventListener('keydown', unlock)
+      window.removeEventListener('pointerdown', onGesture)
+      window.removeEventListener('keydown', onGesture)
     }
   }, [enabled])
 
@@ -53,12 +112,6 @@ export function useHallAlertSound(alert: HallAlert | null, enabled: boolean) {
     }
     if (lastIdRef.current === alert.id) return
     lastIdRef.current = alert.id
-
-    const audio = new Audio(SOUND[alert.kind])
-    audio.preload = 'auto'
-    audio.volume = 0.9
-    void audio.play().catch(() => {
-      /* autoplay blocked until the Display page gets a tap — press OK once on the TV */
-    })
+    playAlert(alert.kind)
   }, [alert, enabled])
 }

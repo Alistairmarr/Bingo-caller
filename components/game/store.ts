@@ -150,14 +150,15 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     let timer: number | null = null
     if (role === 'display') setRoomStatus('connecting')
 
-    // ~200ms poll + ETag 304s — snappier than 600ms without long-lived sockets.
-    const POLL_MS = 200
+    // Display/Mobile/Checker: ~200ms + ETag 304s. Caller: 400ms (claims still snappy, less read load).
+    const BASE_POLL_MS = role === 'caller' ? 400 : 200
+    let pollMs = BASE_POLL_MS
 
     const schedule = () => {
       if (cancelled) return
       timer = window.setTimeout(() => {
         void tick()
-      }, POLL_MS)
+      }, pollMs)
     }
 
     const tick = async () => {
@@ -176,6 +177,12 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
           }
           return
         }
+        if (remote.status === 'rate_limited') {
+          // Back off quietly — don’t flash a hard error on the hall screens
+          pollMs = Math.min(pollMs * 2, 4000)
+          return
+        }
+        pollMs = BASE_POLL_MS
         if (remote.status === 'ok') {
           if ((remote.state.updatedAt ?? 0) >= (stateRef.current.updatedAt ?? 0)) {
             setState(remote.state)
@@ -188,8 +195,13 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
         }
       } catch (err) {
         if (!cancelled && role === 'display') {
-          setRoomStatus('error')
-          setRoomError(err instanceof Error ? err.message : 'Could not reach room')
+          const message = err instanceof Error ? err.message : 'Could not reach room'
+          if (message === 'rate_limited') {
+            pollMs = Math.min(pollMs * 2, 4000)
+          } else {
+            setRoomStatus('error')
+            setRoomError(message)
+          }
         }
       } finally {
         inFlight = false

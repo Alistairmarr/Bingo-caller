@@ -6,12 +6,16 @@ const MAX_BUCKETS = 16
 /**
  * Separate named buckets so Display GET flood cannot exhaust Caller claim/PUT.
  * Never keyed by client IP / forwarded headers.
+ *
+ * Hall night: Caller + TV Display + Checker + several phones all poll ~200–400ms
+ * with ETag 304s. Limits must clear normal fete use while still capping abuse.
  */
 const BUCKET_LIMITS: Record<string, number> = {
-  'rooms-read': 30_000, // Display phones poll ~5/s with ETag 304s; hall can have many devices
-  'rooms-claim': 60, // POST mint / reclaim (PIN)
-  'rooms-write': 240, // Caller PUT updates
-  'rooms-alert': 120, // Checker Bingo / Full House claims
+  // ~400 devices × 5 GET/s ≈ 120k/min — headroom for phones + pad + TV + checker
+  'rooms-read': 120_000,
+  'rooms-claim': 180, // POST mint / reclaim (PIN) — still tight vs guessing
+  'rooms-write': 900, // Caller PUTs (Next, alerts, contrast, new game)
+  'rooms-alert': 360, // Checker Bingo / Full House claims
 }
 
 type Bucket = { resetAt: number; hits: number }
@@ -54,7 +58,10 @@ export function rateLimit(_request: Request, bucket: keyof typeof BUCKET_LIMITS)
   }
   entry.hits += 1
   if (entry.hits > maxHits) {
-    return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
+    return NextResponse.json(
+      { error: 'rate_limited', message: 'Too many requests — please wait a moment' },
+      { status: 429 },
+    )
   }
   return null
 }
