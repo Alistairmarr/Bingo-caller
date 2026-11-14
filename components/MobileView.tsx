@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { DirtyGirty } from './DirtyGirty'
+import { JuneTwelfth } from './JuneTwelfth'
 import { MarketCrossMark } from './Emblems'
 import { HallAlertBanner } from './HallAlert'
 import { NumberBoard } from './NumberBoard'
@@ -21,6 +22,7 @@ export function MobileView() {
   const last = lastCalled(state)
   const joined = !!room
   const girty = last === 30
+  const june12 = last === 12
   const prepNextGame = joined && state.called.length === 0
 
   useEffect(() => {
@@ -118,6 +120,7 @@ export function MobileView() {
 
           <HallAlertBanner alert={state.hallAlert} />
           <DirtyGirty trigger={girty} />
+          <JuneTwelfth trigger={june12} />
         </>
       )}
     </main>

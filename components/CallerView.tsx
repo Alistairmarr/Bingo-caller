@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
+import { JuneTwelfth } from './JuneTwelfth'
 import { MarketCrossMark } from './Emblems'
 import { NewGameDialog } from './NewGameDialog'
 import { NumberBoard } from './NumberBoard'
@@ -79,6 +80,7 @@ export function CallerView() {
   const remaining = remainingCount(state)
   const exhausted = remaining === 0
   const girty = last === 30
+  const june12 = last === 12
   const codeHidden = state.joinHidden
   const showPinGate = needsCallerPin || (!room && roomStatus === 'error')
 
@@ -350,6 +352,7 @@ export function CallerView() {
       ) : null}
 
       <DirtyGirty trigger={girty} />
+      <JuneTwelfth trigger={june12} />
 
       <ConfirmDialog
         open={undoOpen && last !== null}

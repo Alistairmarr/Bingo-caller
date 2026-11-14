@@ -254,6 +254,9 @@ if (await checker.locator('.hall-alert').count()) {
 if (await checker.locator('.girty-overlay').count()) {
   throw new Error('Checker must not show Dirty Girty')
 }
+if (await checker.locator('.june12-overlay').count()) {
+  throw new Error('Checker must not show June 12 Fete egg')
+}
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 await checker.waitForSelector('.checker-cue', { state: 'detached', timeout: 8000 })
