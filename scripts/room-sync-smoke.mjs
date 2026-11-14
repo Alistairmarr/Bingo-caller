@@ -154,6 +154,13 @@ if (third !== thirdMobile) throw new Error('third call not mobile-synced')
 if (third === afterBurst) throw new Error('expected a new number after debounce window')
 
 await caller.getByRole('button', { name: 'Undo last' }).click()
+await caller.waitForSelector('[role="alertdialog"]', { timeout: 5000 })
+const undoTitle = ((await caller.locator('#dialog-title').textContent()) || '').trim()
+if (!/^Undo \d+\?$/.test(undoTitle)) {
+  throw new Error(`expected Undo N? confirm, got ${undoTitle}`)
+}
+await caller.getByRole('button', { name: /^Undo \d+$/ }).click()
+await caller.waitForSelector('[role="alertdialog"]', { state: 'detached', timeout: 5000 })
 await caller.waitForTimeout(900)
 const afterUndo = await displayLast()
 if (afterUndo !== afterBurst) throw new Error(`undo not room-synced: ${afterUndo} expected ${afterBurst}`)
