@@ -11,7 +11,7 @@ import { lastCalled } from './game/types'
 
 /**
  * Checker pad — clear called-numbers view for verifying a bingo card.
- * Small cue when Caller signals Bingo / Full House; no hall banners or Dirty Girty.
+ * Small cue when Caller signals Bingo / Full House; no hall banners, Dirty Girty, or June 12 egg.
  */
 export function CheckerView() {
   const searchParams = useSearchParams()

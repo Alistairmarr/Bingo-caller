@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { DirtyGirty } from './DirtyGirty'
+import { JuneTwelfth } from './JuneTwelfth'
 import { MarketCrossMark } from './Emblems'
 import { HallAlertBanner } from './HallAlert'
 import { NumberBoard } from './NumberBoard'
@@ -23,6 +24,7 @@ export function DisplayView() {
   const last = lastCalled(state)
   const joined = !!room
   const girty = last === 30
+  const june12 = last === 12
   const showQr = joined && !!room && !state.joinHidden
 
   // TV speakers only — Bingo / Full House cues (not on Caller or phones)
@@ -160,6 +162,7 @@ export function DisplayView() {
 
           <HallAlertBanner alert={state.hallAlert} size="hall" />
           <DirtyGirty trigger={girty} size="hall" />
+          <JuneTwelfth trigger={june12} size="hall" />
         </>
       )}
     </main>

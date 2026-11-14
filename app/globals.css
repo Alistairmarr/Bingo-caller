@@ -969,7 +969,8 @@ strong {
 /* Keep overlays viewport-fixed (the rule above would otherwise force relative) */
 .display > .display-qr-overlay,
 .display > .hall-alert,
-.display > .girty-overlay {
+.display > .girty-overlay,
+.display > .june12-overlay {
   position: fixed;
   inset: 0;
 }
@@ -982,7 +983,8 @@ strong {
   z-index: 70;
 }
 
-.display > .girty-overlay {
+.display > .girty-overlay,
+.display > .june12-overlay {
   z-index: 80;
 }
 
@@ -1625,6 +1627,114 @@ strong {
   pointer-events: none;
 }
 
+/* June 12 easter egg — next year’s Fete date (same dismiss-on-Next as Dirty Girty) */
+.june12-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 220, 120, 0.22), transparent 48%),
+    rgba(6, 28, 18, 0.55);
+  animation: girty-fade 0.25s ease-out;
+  pointer-events: none;
+}
+
+.june12-kicker {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1rem, 3.2vw, 1.65rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffe08a;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+  animation: girty-pop 0.5s cubic-bezier(0.2, 1.35, 0.4, 1);
+}
+
+.june12-overlay--hall .june12-kicker {
+  font-size: clamp(1.5rem, 3.8vmin, 2.75rem);
+}
+
+.june12-line {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: 18ch;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.7rem, 6.5vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: #fff8e6;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 0 28px rgba(120, 220, 140, 0.4);
+  animation: girty-pop 0.55s 0.04s cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+
+.june12-overlay--hall .june12-line--hall {
+  max-width: 16ch;
+  font-size: clamp(3rem, 11vmin, 7.5rem);
+  line-height: 1.02;
+  text-shadow: 0 6px 0 rgba(0, 0, 0, 0.45), 0 0 48px rgba(140, 240, 160, 0.5);
+}
+
+.june12-sub {
+  position: relative;
+  z-index: 2;
+  margin: 0.15rem 0 0;
+  font-size: clamp(0.95rem, 2.8vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 255, 230, 0.92);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  animation: girty-pop 0.55s 0.08s cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+
+.june12-overlay--hall .june12-sub {
+  font-size: clamp(1.25rem, 3.2vmin, 2.2rem);
+}
+
+.june12-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.june12-piece {
+  position: absolute;
+  top: -12%;
+  left: var(--x);
+  width: 0.65rem;
+  height: 1.05rem;
+  border-radius: 2px;
+  background: hsl(var(--hue) 78% 58%);
+  opacity: 0.95;
+  animation: girty-fall var(--dur) linear var(--delay) both;
+  transform: rotate(var(--rot));
+  box-shadow: 0 0 8px hsla(var(--hue), 80%, 55%, 0.35);
+}
+
+.june12-piece:nth-child(3n) {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.june12-piece:nth-child(5n) {
+  width: 0.85rem;
+  height: 0.35rem;
+  border-radius: 999px;
+}
+
 .girty-line {
   position: relative;
   z-index: 2;
@@ -1828,13 +1938,15 @@ strong {
 }
 
 .mobile > .hall-alert,
-.mobile > .girty-overlay {
+.mobile > .girty-overlay,
+.mobile > .june12-overlay {
   position: fixed;
   inset: 0;
   z-index: 70;
 }
 
-.mobile > .girty-overlay {
+.mobile > .girty-overlay,
+.mobile > .june12-overlay {
   z-index: 80;
 }
 
