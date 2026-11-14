@@ -11,16 +11,20 @@ import { lastCalled } from './game/types'
 
 /**
  * Checker pad — clear called-numbers view for verifying a bingo card.
- * Small cue when Caller signals Bingo / Full House; no hall banners, Dirty Girty, or June 12 egg.
+ * Can raise Bingo / Full House for the hall; no grand banners / Dirty Girty / June 12 egg.
  */
 export function CheckerView() {
   const searchParams = useSearchParams()
-  const { state, room, roomStatus, roomError, joinRoom } = useBingoStore({ role: 'display' })
+  const { state, room, roomStatus, roomError, joinRoom, signalCheckerHallAlert } = useBingoStore({
+    role: 'display',
+  })
   const [draft, setDraft] = useState('FETE')
+  const [claimBusy, setClaimBusy] = useState(false)
   const autoTried = useRef(false)
   const last = lastCalled(state)
   const joined = !!room
   const checkCue = state.hallAlert?.kind ?? null
+  const claimFromChecker = state.hallAlert?.source === 'checker'
 
   const calledSorted = useMemo(
     () => [...state.called].sort((a, b) => a - b),
@@ -47,6 +51,16 @@ export function CheckerView() {
     await joinRoom(code)
   }
 
+  const onClaim = async (kind: 'bingo' | 'full_house') => {
+    if (claimBusy || !room) return
+    setClaimBusy(true)
+    try {
+      await signalCheckerHallAlert(kind)
+    } finally {
+      setClaimBusy(false)
+    }
+  }
+
   return (
     <main
       className={`checker checker--called-focus theme-${state.themeColor} ${joined ? 'checker--live' : ''}`}
@@ -70,7 +84,9 @@ export function CheckerView() {
       {!joined ? (
         <section className="join-panel">
           <h2>Checker pad</h2>
-          <p>Scan the Checker QR on the Caller pad, or enter the hall code (usually <strong>FETE</strong>).</p>
+          <p>
+            Scan the Checker QR on the Caller pad, or enter the hall code (usually <strong>FETE</strong>).
+          </p>
           <form className="join-form" onSubmit={(e) => void onJoin(e)}>
             <input
               className="join-input"
@@ -107,7 +123,13 @@ export function CheckerView() {
                 }
                 role="status"
               >
-                {checkCue === 'bingo' ? 'Checking for Bingo (one line)' : 'Checking for Full House'}
+                {claimFromChecker
+                  ? checkCue === 'bingo'
+                    ? 'Claim sent — Bingo (one line)'
+                    : 'Claim sent — Full House'
+                  : checkCue === 'bingo'
+                    ? 'Checking for Bingo (one line)'
+                    : 'Checking for Full House'}
               </p>
             ) : null}
             <div className="checker-hero">
@@ -117,6 +139,25 @@ export function CheckerView() {
               </p>
               <p className="checker-count">{state.called.length} numbers called</p>
               {roomStatus === 'error' && <p className="join-error">{roomError}</p>}
+            </div>
+
+            <div className="checker-claims" role="group" aria-label="Raise a claim">
+              <button
+                type="button"
+                className="btn btn-bingo"
+                disabled={claimBusy || !!state.hallAlert}
+                onClick={() => void onClaim('bingo')}
+              >
+                Bingo
+              </button>
+              <button
+                type="button"
+                className="btn btn-full-house"
+                disabled={claimBusy || !!state.hallAlert}
+                onClick={() => void onClaim('full_house')}
+              >
+                Full House
+              </button>
             </div>
 
             <section className="checker-called-list" aria-label="All called numbers, sorted">

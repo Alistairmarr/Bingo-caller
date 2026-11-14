@@ -10,7 +10,7 @@ import {
   startNewGame,
   undoLast,
 } from './logic'
-import { CallerPinError, createRoom, fetchRoom, pushRoom } from './roomApi'
+import { CallerPinError, createRoom, fetchRoom, pushCheckerHallAlert, pushRoom } from './roomApi'
 import {
   CHANNEL_NAME,
   DEFAULT_STATE,
@@ -143,13 +143,14 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
   }, [])
 
   useEffect(() => {
-    if (role !== 'display' || !room) return
+    // Display polls for calls; Caller also polls so Checker Bingo/Full House claims reach the pad.
+    if ((role !== 'display' && role !== 'caller') || !room) return
     let cancelled = false
     let inFlight = false
     let timer: number | null = null
-    setRoomStatus('connecting')
+    if (role === 'display') setRoomStatus('connecting')
 
-    // ~200ms Display poll + ETag 304s — snappier than 600ms without long-lived sockets.
+    // ~200ms poll + ETag 304s — snappier than 600ms without long-lived sockets.
     const POLL_MS = 200
 
     const schedule = () => {
@@ -169,8 +170,10 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
         const remote = await fetchRoom(room)
         if (cancelled) return
         if (remote.status === 'missing') {
-          setRoomStatus('error')
-          setRoomError('Room not found — check the code on the Pad')
+          if (role === 'display') {
+            setRoomStatus('error')
+            setRoomError('Room not found — check the code on the Pad')
+          }
           return
         }
         if (remote.status === 'ok') {
@@ -179,10 +182,12 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
             writeStored(remote.state)
           }
         }
-        setRoomStatus('live')
-        setRoomError(null)
+        if (role === 'display') {
+          setRoomStatus('live')
+          setRoomError(null)
+        }
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && role === 'display') {
           setRoomStatus('error')
           setRoomError(err instanceof Error ? err.message : 'Could not reach room')
         }
@@ -285,10 +290,32 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
 
   const signalHallAlert = useCallback(
     (kind: HallAlertKind) => {
-      void publish(setHallAlert(stateRef.current, kind))
+      void publish(setHallAlert(stateRef.current, kind, 'caller'))
     },
     [publish],
   )
+
+  /** Checker raises a claim — same hallAlert path, source=checker (no Caller token). */
+  const signalCheckerHallAlert = useCallback(async (kind: HallAlertKind) => {
+    const code = roomRef.current
+    if (!code) return
+    const optimistic = setHallAlert(stateRef.current, kind, 'checker')
+    stateRef.current = optimistic
+    setState(optimistic)
+    writeStored(optimistic)
+    getChannel()?.postMessage(optimistic)
+    try {
+      const confirmed = await pushCheckerHallAlert(code, kind)
+      stateRef.current = confirmed
+      setState(confirmed)
+      writeStored(confirmed)
+      setRoomStatus('live')
+      setRoomError(null)
+    } catch (err) {
+      setRoomStatus('error')
+      setRoomError(err instanceof Error ? err.message : 'Could not raise claim')
+    }
+  }, [])
 
   const dismissHallAlert = useCallback(() => {
     void publish(clearHallAlert(stateRef.current))
@@ -318,6 +345,7 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     undo,
     changeJoinHidden,
     signalHallAlert,
+    signalCheckerHallAlert,
     dismissHallAlert,
     changeHighContrast,
     beginNewGame,

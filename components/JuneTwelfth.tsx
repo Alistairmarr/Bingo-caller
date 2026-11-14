@@ -3,7 +3,7 @@
 import { useId, type CSSProperties } from 'react'
 
 /**
- * Village-hall easter egg when 12 is called — next year’s Ancrum Fete is June 12th.
+ * Village-hall easter egg when 12 is called — 50th anniversary announcement.
  * Stays until the next number (same pattern as Dirty Girty).
  */
 export function JuneTwelfth({
@@ -27,7 +27,7 @@ export function JuneTwelfth({
       aria-live="assertive"
     >
       <div className="june12-confetti" aria-hidden>
-        {Array.from({ length: size === 'hall' ? 64 : 40 }, (_, i) => (
+        {Array.from({ length: size === 'hall' ? 80 : 48 }, (_, i) => (
           <span
             key={`${confettiId}-${i}`}
             className="june12-piece"
@@ -43,11 +43,9 @@ export function JuneTwelfth({
           />
         ))}
       </div>
-      <p className="june12-kicker">Ancrum Fete</p>
       <p className={size === 'hall' ? 'june12-line june12-line--hall' : 'june12-line'}>
-        See you next year — June 12th
+        June 12th 2027 Ancrum Fete 50th Anniversary
       </p>
-      <p className="june12-sub">On the village green</p>
     </div>
   )
 }

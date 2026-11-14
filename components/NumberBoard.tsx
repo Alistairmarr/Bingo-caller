@@ -7,9 +7,17 @@ interface NumberBoardProps {
   called: number[]
   highlight?: number | null
   compact?: boolean
+  /** TV Display: newly called ball pulses twice for the back of the hall. */
+  pulseHot?: boolean
 }
 
-export function NumberBoard({ mode, called, highlight = null, compact = false }: NumberBoardProps) {
+export function NumberBoard({
+  mode,
+  called,
+  highlight = null,
+  compact = false,
+  pulseHot = false,
+}: NumberBoardProps) {
   const total = maxBall(mode)
   const calledSet = new Set(called)
   const cols = 10
@@ -27,8 +35,13 @@ export function NumberBoard({ mode, called, highlight = null, compact = false }:
         const isHot = highlight === n
         return (
           <span
-            key={n}
-            className={['ball', isCalled ? 'ball--called' : 'ball--idle', isHot ? 'ball--hot' : '']
+            key={isHot && pulseHot ? `hot-${n}-${highlight}` : n}
+            className={[
+              'ball',
+              isCalled ? 'ball--called' : 'ball--idle',
+              isHot ? 'ball--hot' : '',
+              isHot && pulseHot ? 'ball--pulse' : '',
+            ]
               .filter(Boolean)
               .join(' ')}
           >

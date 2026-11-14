@@ -243,10 +243,15 @@ const displayNow = await displayLast()
 if (checkerLast !== displayNow) {
   throw new Error(`checker last mismatch: checker=${checkerLast} display=${displayNow}`)
 }
-// Fire Bingo again — Display gets the banner; Checker gets a small cue only
-await caller.getByRole('button', { name: 'Bingo' }).click()
+// Checker raises Bingo — Display/Mobile grand; Caller pad notices source=checker; Checker stays quiet (cue only)
+await checker.getByRole('button', { name: 'Bingo' }).click()
 await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
 await mobile.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await caller.waitForSelector('.caller-alert-live--from-checker', { timeout: 8000 })
+const checkerClaimText = ((await caller.locator('.caller-alert-live-text').textContent()) || '').trim()
+if (!/Checker raised Bingo/i.test(checkerClaimText)) {
+  throw new Error(`Caller should show Checker claim notice, got: ${checkerClaimText}`)
+}
 await checker.waitForSelector('.checker-cue--bingo', { timeout: 8000 })
 if (await checker.locator('.hall-alert').count()) {
   throw new Error('Checker must not show Bingo / Full House banners')
@@ -260,6 +265,13 @@ if (await checker.locator('.june12-overlay').count()) {
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 await checker.waitForSelector('.checker-cue', { state: 'detached', timeout: 8000 })
+
+// Caller Bingo still works after Checker claim path
+await caller.getByRole('button', { name: 'Bingo' }).click()
+await display.waitForSelector('.hall-alert--bingo', { timeout: 8000 })
+await caller.waitForSelector('.caller-alert-live:not(.caller-alert-live--from-checker)', { timeout: 8000 })
+await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
+await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
 
 // High-contrast Display toggle from Caller
 await caller.getByRole('button', { name: 'Contrast' }).click()
