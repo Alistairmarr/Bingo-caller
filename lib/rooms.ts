@@ -5,7 +5,8 @@ import { sql } from '@/lib/db'
 /** Single hall room for Ancrum Fete — no multi-room create. */
 export const HALL_ROOM_CODE = 'FETE'
 
-export type BingoMode = 75 | 90
+/** Ancrum Fete is 90-ball only (legacy 75 coerced on read). */
+export type BingoMode = 90
 
 export type HallAlertKind = 'bingo' | 'full_house'
 
@@ -61,11 +62,11 @@ function parseThemeColor(raw: unknown): ThemeColor {
 export function normalizeState(raw: unknown): Omit<BingoState, 'updatedAt'> | null {
   if (!raw || typeof raw !== 'object') return null
   const obj = raw as Record<string, unknown>
-  const mode = obj.mode === 75 || obj.mode === 90 ? obj.mode : 90
+  const mode: BingoMode = 90
   const called = Array.isArray(obj.called)
     ? obj.called
-        .filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= mode)
-        .slice(0, mode)
+        .filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 90)
+        .slice(0, 90)
     : []
   const joinHidden = obj.joinHidden === true
   const hallAlert = parseHallAlert(obj.hallAlert)
@@ -127,7 +128,7 @@ function parseCalled(raw: unknown): number[] {
 
 function rowToState(row: RoomRow): BingoState {
   return {
-    mode: (row.mode === 75 ? 75 : 90) as BingoMode,
+    mode: 90 as BingoMode,
     called: parseCalled(row.called),
     joinHidden: row.join_hidden === true,
     hallAlert: parseHallAlert(row.hall_alert),

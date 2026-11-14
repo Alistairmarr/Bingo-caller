@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ConfirmDialog } from './ConfirmDialog'
 import { DirtyGirty } from './DirtyGirty'
 import { MarketCrossMark } from './Emblems'
 import { NewGameDialog } from './NewGameDialog'
@@ -10,7 +9,7 @@ import { NumberBoard } from './NumberBoard'
 import { RoomQr } from './RoomQr'
 import { remainingCount } from './game/logic'
 import { useBingoStore } from './game/store'
-import { lastCalled, maxBall, type BingoMode } from './game/types'
+import { lastCalled, maxBall } from './game/types'
 import { ukCallName } from './game/ukCallNames'
 
 const CALL_NAMES_KEY = 'ancrum-fete-bingo-caller-call-names'
@@ -24,8 +23,6 @@ export function CallerView() {
     needsCallerPin,
     callNext,
     undo,
-    clear,
-    changeMode,
     changeJoinHidden,
     signalHallAlert,
     dismissHallAlert,
@@ -33,10 +30,8 @@ export function CallerView() {
     beginNewGame,
     ensureCallerRoom,
   } = useBingoStore({ role: 'caller' })
-  const [clearOpen, setClearOpen] = useState(false)
   const [newGameOpen, setNewGameOpen] = useState(false)
   const [checkerQrOpen, setCheckerQrOpen] = useState(false)
-  const [modePending, setModePending] = useState<BingoMode | null>(null)
   const [copied, setCopied] = useState(false)
   const [nextLocked, setNextLocked] = useState(false)
   const nextLockRef = useRef(false)
@@ -123,15 +118,6 @@ export function CallerView() {
     }
   }
 
-  const requestMode = (mode: BingoMode) => {
-    if (mode === state.mode) return
-    if (state.called.length > 0) {
-      setModePending(mode)
-      return
-    }
-    changeMode(mode)
-  }
-
   const alertActive = !!state.hallAlert
 
   const onNext = () => {
@@ -168,30 +154,9 @@ export function CallerView() {
           <h1 className="sr-only">Caller</h1>
         </div>
         <div className="caller-top-actions">
-          {state.called.length === 0 ? (
-            <div className="mode-switch" role="group" aria-label="Game mode">
-              <button
-                type="button"
-                className={state.mode === 90 ? 'mode-btn mode-btn--active' : 'mode-btn'}
-                onClick={() => requestMode(90)}
-                disabled={showPinGate}
-              >
-                90-ball
-              </button>
-              <button
-                type="button"
-                className={state.mode === 75 ? 'mode-btn mode-btn--active' : 'mode-btn'}
-                onClick={() => requestMode(75)}
-                disabled={showPinGate}
-              >
-                75-ball
-              </button>
-            </div>
-          ) : (
-            <p className="caller-mode-locked" aria-label="Game mode">
-              {state.mode}-ball
-            </p>
-          )}
+          <p className="caller-mode-locked" aria-label="Game mode">
+            90-ball
+          </p>
           <button
             type="button"
             className={showCallNames ? 'mode-btn mode-btn--active' : 'mode-btn'}
@@ -298,7 +263,7 @@ export function CallerView() {
             <div className="caller-call-panel">
               <section className="caller-hero" aria-live="polite">
                 <p className="caller-kicker">
-                  {state.mode}-ball · {state.called.length} called
+                  90-ball · {state.called.length} called
                   {exhausted
                     ? ''
                     : remaining === maxBall(state.mode)
@@ -323,14 +288,6 @@ export function CallerView() {
                   title={alertActive ? 'Dismiss Bingo / Full House first' : undefined}
                 >
                   Undo last
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => setClearOpen(true)}
-                  disabled={state.called.length === 0}
-                >
-                  Clear board
                 </button>
               </div>
             </div>
@@ -395,19 +352,6 @@ export function CallerView() {
 
       <DirtyGirty trigger={girty} />
 
-      <ConfirmDialog
-        open={clearOpen}
-        title="Clear the board?"
-        body="This removes every called number for the current game. You can’t undo a clear."
-        confirmLabel="Clear all"
-        danger
-        onCancel={() => setClearOpen(false)}
-        onConfirm={() => {
-          clear()
-          setClearOpen(false)
-        }}
-      />
-
       <NewGameDialog
         open={newGameOpen}
         current={state.themeColor}
@@ -451,19 +395,6 @@ export function CallerView() {
           </div>
         </div>
       ) : null}
-
-      <ConfirmDialog
-        open={modePending !== null}
-        title={`Switch to ${modePending}-ball?`}
-        body="Numbers have already been called. Switching mode clears the board and starts fresh."
-        confirmLabel={`Switch to ${modePending}`}
-        danger
-        onCancel={() => setModePending(null)}
-        onConfirm={() => {
-          if (modePending) changeMode(modePending)
-          setModePending(null)
-        }}
-      />
     </main>
   )
 }

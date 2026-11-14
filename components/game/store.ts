@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  clearCalled,
   clearHallAlert,
   nextNumber,
   setHallAlert,
   setHighContrast,
   setJoinHidden,
-  setMode,
   startNewGame,
   undoLast,
 } from './logic'
@@ -18,9 +16,9 @@ import {
   DEFAULT_STATE,
   ROOM_STORAGE_KEY,
   STORAGE_KEY,
+  parseBingoMode,
   parseHallAlert,
   parseThemeColor,
-  type BingoMode,
   type BingoState,
   type HallAlertKind,
   type ThemeColor,
@@ -31,11 +29,10 @@ function readStored(): BingoState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { ...DEFAULT_STATE, updatedAt: Date.now() }
     const parsed = JSON.parse(raw) as Partial<BingoState>
-    if (parsed.mode !== 75 && parsed.mode !== 90) return { ...DEFAULT_STATE, updatedAt: Date.now() }
     if (!Array.isArray(parsed.called)) return { ...DEFAULT_STATE, updatedAt: Date.now() }
     return {
-      mode: parsed.mode,
-      called: parsed.called.filter((n): n is number => typeof n === 'number'),
+      mode: parseBingoMode(parsed.mode),
+      called: parsed.called.filter((n): n is number => typeof n === 'number' && n >= 1 && n <= 90),
       joinHidden: parsed.joinHidden === true,
       hallAlert: parseHallAlert(parsed.hallAlert),
       highContrast: parsed.highContrast === true,
@@ -279,17 +276,6 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     void publish(undoLast(stateRef.current))
   }, [publish])
 
-  const clear = useCallback(() => {
-    void publish(clearCalled(stateRef.current))
-  }, [publish])
-
-  const changeMode = useCallback(
-    (mode: BingoMode) => {
-      void publish(setMode(stateRef.current, mode))
-    },
-    [publish],
-  )
-
   const changeJoinHidden = useCallback(
     (hidden: boolean) => {
       void publish(setJoinHidden(stateRef.current, hidden))
@@ -330,8 +316,6 @@ export function useBingoStore(opts: { role: SyncRole; roomCode?: string | null }
     needsCallerPin,
     callNext,
     undo,
-    clear,
-    changeMode,
     changeJoinHidden,
     signalHallAlert,
     dismissHallAlert,

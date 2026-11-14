@@ -73,19 +73,21 @@ if (await earlyDismiss.count()) {
   await earlyDismiss.click()
   await caller.waitForSelector('.btn-bingo', { timeout: 8000 })
 }
-// Fresh board so debounce counts stay predictable across smoke runs
-if (await caller.getByRole('button', { name: 'Clear board' }).isEnabled()) {
-  await caller.getByRole('button', { name: 'Clear board' }).click()
-  await caller.getByRole('button', { name: 'Clear all' }).click()
-  await caller.waitForFunction(() => {
-    const el = document.querySelector('.caller-last')
-    return el && el.textContent && el.textContent.trim() === '—'
-  })
+// Fresh board via New game (no Clear board) so debounce counts stay predictable
+await caller.getByRole('button', { name: 'New game' }).click()
+await caller.waitForSelector('.dialog--new-game')
+await caller.locator('.theme-swatch--green').click()
+await caller.getByRole('button', { name: 'Start game' }).click()
+await caller.waitForSelector('.dialog--new-game', { state: 'detached', timeout: 5000 })
+await caller.waitForFunction(() => {
+  const el = document.querySelector('.caller-last')
+  return el && el.textContent && el.textContent.trim() === '—'
+})
+if (await caller.getByRole('button', { name: 'Clear board' }).count()) {
+  throw new Error('Clear board should be removed — use New game')
 }
-// Reveal QR for prep if a prior Next hid the code
-const showCode = caller.locator('.caller-show-code')
-if (await showCode.count()) {
-  await showCode.click()
+if (await caller.getByRole('button', { name: '75-ball' }).count()) {
+  throw new Error('75-ball should be removed — 90-ball only')
 }
 await display.waitForSelector('.display-qr-overlay .room-qr', { timeout: 8000 })
 await display.waitForSelector('.display-qr-prep .display-next-game-colour', { timeout: 8000 })
@@ -179,9 +181,6 @@ if (!(await caller.getByRole('button', { name: 'Next number' }).isEnabled())) {
 }
 if (await caller.getByRole('button', { name: 'Undo last' }).isEnabled()) {
   throw new Error('Undo last should be disabled while Bingo is showing')
-}
-if (await caller.getByRole('button', { name: '90-ball' }).count()) {
-  throw new Error('90/75 mode switch should hide once numbers are called')
 }
 await caller.getByRole('button', { name: 'Dismiss announcement' }).click()
 await display.waitForSelector('.hall-alert--bingo', { state: 'detached', timeout: 8000 })
