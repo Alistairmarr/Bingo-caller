@@ -55,7 +55,7 @@ export function MobileView() {
         </Link>
         {joined ? (
           <p className="mobile-meta">
-            {state.mode}-ball · {state.called.length} called · {room}
+            {state.called.length} called · {room}
           </p>
         ) : (
           <p className="mobile-meta">Follow along</p>
